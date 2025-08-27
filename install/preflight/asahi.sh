@@ -96,10 +96,9 @@ if [ "$EUID" -eq 0 ] && [ "$(uname -m)" = "aarch64" ]; then
     echo
     echo "   su - $username"
     echo
-    echo "   wget -qO- https://raw.githubusercontent.com/nilszeilon/armarchy/master/boot.sh | bash"
     echo "2. Run the following command to continue installation:"
     echo
-    echo "   wget -qO- https://omarchy.org/install | bash"
+    echo "   wget -qO- https://raw.githubusercontent.com/jondkinney/armarchy/one-point-oh/boot.sh | OMARCHY_REF=one-point-oh bash"
     echo
     echo "=================================="
     echo
