@@ -20,7 +20,9 @@ else
 fi
 
 $PKG_MANAGER -Syy --noconfirm --needed \
-  pipewire-jack \
+  1password-beta \
+  1password-cli \
+  asdcontrol-git \
   alacritty \
   avahi \
   bash-completion \
