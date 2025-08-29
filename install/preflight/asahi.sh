@@ -5,6 +5,8 @@
 # 1. Follow these instructions: https://asahi-alarm.org/ and choose the minimal installation (1)
 # 2. Set up wifi and install wget
 # 3. Run the omarchy install command
+#   wget -qO- https://raw.githubusercontent.com/nilszeilon/armarchy/refs/heads/master/boot.sh | boot
+#   and follow the prompts
 
 # Asahi Linux ARM setup script for Omarchy
 # This script automates the post-Asahi installation steps for MacBook M-series
@@ -21,7 +23,12 @@ if [ "$EUID" -eq 0 ] && [ "$(uname -m)" = "aarch64" ]; then
     echo "Detected Asahi Linux - running initial setup..."
 
     # install gum and asahi specific packages
-    pacman -S --needed --noconfirm gum asahi-audio
+    pacman -S --needed --noconfirm \
+      gum \
+      asahi-audio \
+      pipewire-alsa \
+      pipewire-jack \
+      pipewire-pulse
 
     set -e
 
