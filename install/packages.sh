@@ -135,16 +135,25 @@ $PKG_MANAGER -Syy --noconfirm --needed \
 
 if [ -z "$OMARCHY_ARM" ]; then
   $PKG_MANAGER -S --noconfirm --needed \
-  1password-beta \
-  1password-cli \
-  obs-studio \
-  obsidian \
-  omarchy-chromium \
-  pinta \
-  python-terminaltexteffects \
-  signal-desktop \
-  spotify \
-  ttf-ia-writer \
-  typora \
-  tzupdate \
+    1password-beta \
+    1password-cli \
+    localsend \
+    obs-studio \
+    obsidian \
+    pinta \
+    signal-desktop \
+    spotify \
+    ttf-ia-writer \
+    typora \
+    tzupdate \
+    ufw-docker \
+    walker-bin \
+    wl-screenrec \
+    yaru-icon-theme
+fi
+
+if [ -n "$OMARCHY_ARM" ]; then
+  $PKG_MANAGER -S --noconfirm --needed \
+    asahi-alarm/widevine \
+    obsidian-appimage
 fi
