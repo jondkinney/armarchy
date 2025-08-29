@@ -115,10 +115,9 @@ $PKG_MANAGER -S --noconfirm --needed \
   ttf-cascadia-mono-nerd \
   ttf-jetbrains-mono \
   ufw \
-  ufw-docker \
   unzip \
   uwsm \
-  walker-bin \
+  walker \
   waybar \
   wf-recorder \
   whois \
@@ -144,9 +143,12 @@ if [ -z "$OMARCHY_ARM" ]; then
   omarchy-chromium \
   pinta \
   python-terminaltexteffects \
+  ufw-docker \
   signal-desktop \
   spotify \
   ttf-ia-writer \
   typora \
   tzupdate \
+  walker-bin \
+  wl-screenrec \
 fi
