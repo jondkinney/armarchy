@@ -184,6 +184,6 @@ if [ -n "$OMARCHY_ARM" ]; then
   echo "Installing walker 0.13.26 from AUR for ARM..."
   yay -S --noconfirm --overwrite='*' walker=0.13.26
 
-  $PKG_MANAGER -S --noconfirm --needed \
-    obsidian-appimage
+  # Install Obsidian AppImage for ARM
+  source $OMARCHY_INSTALL/arm_install_scripts/obsidian-appimage.sh
 fi
