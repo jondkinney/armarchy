@@ -19,8 +19,19 @@ else
   PKG_MANAGER="sudo pacman"
 fi
 
-$PKG_MANAGER -Syy --noconfirm --needed \
-  pipewire-jack \
+# Handle jack2 to pipewire-jack transition proactively
+# pipewire-jack provides jack functionality and conflicts with jack2
+# Install pipewire-jack first to prevent conflicts during main package installation
+if pacman -Q jack2 &>/dev/null; then
+  echo "Replacing jack2 with pipewire-jack..."
+  printf "y\ny\n" | sudo pacman -S --needed pipewire-jack
+else
+  echo "Installing pipewire-jack to prevent jack2 conflict..."
+  sudo pacman -S --noconfirm --needed pipewire-jack
+fi
+
+# Install packages (no sync, already done in repositories.sh)
+$PKG_MANAGER -S --noconfirm --needed \
   alacritty \
   avahi \
   bash-completion \
