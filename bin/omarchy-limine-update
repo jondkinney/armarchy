@@ -4,7 +4,7 @@
 # This script generates a tree-like menu with Omarchy at the top level
 # and snapshots organized underneath
 
-set -e
+set -ex  # Enable debugging - show commands and exit on error
 
 LIMINE_CONF="/boot/limine.conf"
 LIMINE_CONF_EFI_LIMINE="/boot/EFI/limine/limine.conf"
@@ -29,16 +29,6 @@ if [[ -f "$LIMINE_CONFIG" ]]; then
     cp "$LIMINE_CONFIG" "${LIMINE_CONFIG}.bak"
 fi
 
-# Function to get kernel cmdline from existing config or default
-get_kernel_cmdline() {
-    if [[ -f "$LIMINE_CONFIG" ]]; then
-        # Try new syntax first, then old syntax
-        grep "^[[:space:]]*kernel_cmdline:" "$LIMINE_CONFIG" | head -1 | sed 's/^[[:space:]]*kernel_cmdline:[[:space:]]*//' || \
-        grep "^[[:space:]]*cmdline:" "$LIMINE_CONFIG" | head -1 | sed 's/^[[:space:]]*cmdline:[[:space:]]*//' || echo ""
-    else
-        echo ""
-    fi
-}
 
 # Function to get latest kernel version
 get_latest_kernel() {
@@ -81,7 +71,7 @@ format_snapshot_desc() {
 # Start building the new config
 cat > "${LIMINE_CONFIG}.tmp" << 'EOF'
 ### Read more at config document: https://github.com/limine-bootloader/limine/blob/trunk/CONFIG.md
-#timeout: 3
+timeout: 12
 default_entry: 2
 interface_branding: Omarchy Bootloader
 interface_branding_color: 2
@@ -102,22 +92,31 @@ term_background_bright: 24283b
 EOF
 
 KERNEL_VERSION=$(get_latest_kernel)
-CMDLINE=$(get_kernel_cmdline)
 
-# Add fallback cmdline if empty
-if [[ -z "$CMDLINE" ]]; then
-    CMDLINE="quiet splash"
-    # Try to detect encrypted setup
-    if [[ -e /dev/mapper/root ]]; then
-        ROOT_DEVICE=$(findmnt -n -o SOURCE /)
-        if [[ "$ROOT_DEVICE" == "/dev/mapper/root" ]]; then
-            # Try to find the partition UUID
-            PART_UUID=$(lsblk -no PARTUUID $(cryptsetup status root | grep device | awk '{print $2}') 2>/dev/null || echo "")
-            if [[ -n "$PART_UUID" ]]; then
-                CMDLINE="quiet splash cryptdevice=PARTUUID=$PART_UUID:root root=/dev/mapper/root zswap.enabled=0 rootflags=subvol=@ rw rootfstype=btrfs"
-            fi
-        fi
+# Build cmdline from scratch based on current system (don't read from existing config)
+ROOT_DEVICE=$(findmnt -n -o SOURCE /)
+# Extract just the device path (remove subvolume suffix like [/root])
+ROOT_DEVICE_CLEAN=$(echo "$ROOT_DEVICE" | sed 's/\[.*\]$//')
+
+# Skip encryption check - this system uses regular btrfs
+ROOT_UUID=$(blkid -o value -s UUID "$ROOT_DEVICE_CLEAN" 2>/dev/null)
+if [[ -z "$ROOT_UUID" ]]; then
+    # Fallback: try to find any btrfs UUID
+    ROOT_UUID=$(blkid | grep 'TYPE="btrfs"' | grep -oP 'UUID="\K[^"]+' | head -1)
+fi
+
+if [[ -n "$ROOT_UUID" ]]; then
+    # Check if we're using subvolumes
+    MOUNT_OPTIONS=$(findmnt -n -o OPTIONS /)
+    if echo "$MOUNT_OPTIONS" | grep -q "subvol="; then
+        SUBVOL=$(echo "$MOUNT_OPTIONS" | grep -o "subvol=[^,]*" | cut -d= -f2)
+        CMDLINE="root=UUID=$ROOT_UUID rootflags=subvol=$SUBVOL rw rootfstype=btrfs quiet splash"
+    else
+        CMDLINE="root=UUID=$ROOT_UUID rw rootfstype=btrfs quiet splash"
     fi
+else
+    echo "ERROR: Could not detect root filesystem UUID!"
+    exit 1
 fi
 
 # Main Omarchy entry (expandable by default with +)
