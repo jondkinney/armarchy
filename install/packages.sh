@@ -181,15 +181,6 @@ if [ -n "$OMARCHY_ARM" ]; then
       asahi-alarm/widevine
   fi
 
-  # Remove any existing walker packages before installing specific version
-  echo "Removing any existing walker packages..."
-  sudo pacman -Rdd --noconfirm walker walker-bin 2>/dev/null || true
-  yay -Rdd --noconfirm walker walker-bin 2>/dev/null || true
-
-  # Install walker version 0.13.26 from AUR for ARM (force exact version)
-  echo "Installing walker 0.13.26 from AUR for ARM..."
-  yay -S --noconfirm --overwrite='*' walker=0.13.26
-
-  # Install Obsidian AppImage for ARM
+  source $OMARCHY_INSTALL/arm_install_scripts/walker.sh
   source $OMARCHY_INSTALL/arm_install_scripts/obsidian-appimage.sh
 fi
