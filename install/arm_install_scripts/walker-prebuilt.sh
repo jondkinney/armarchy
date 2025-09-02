@@ -12,7 +12,7 @@ yay -Rdd --noconfirm walker walker-bin 2>/dev/null || true
 
 # Install runtime dependencies
 echo "Installing runtime dependencies..."
-sudo pacman -S --needed --noconfirm gtk4 gtk4-layer-shell
+sudo pacman -S --needed --noconfirm gtk4 gtk4-layer-shell libvips
 
 # Install prebuilt binary
 echo "Installing prebuilt walker binary..."
