@@ -155,6 +155,7 @@ if [ -z "$OMARCHY_ARM" ]; then
     localsend \
     obs-studio \
     obsidian \
+    omarchy-chromium \
     pinta \
     qt5-wayland \
     signal-desktop \
@@ -183,4 +184,5 @@ if [ -n "$OMARCHY_ARM" ]; then
 
   source $OMARCHY_INSTALL/arm_install_scripts/walker.sh
   source $OMARCHY_INSTALL/arm_install_scripts/obsidian-appimage.sh
+  source $OMARCHY_INSTALL/arm_install_scripts/omarchy-chromium-arm64-widevine.sh
 fi
