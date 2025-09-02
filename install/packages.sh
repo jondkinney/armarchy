@@ -112,6 +112,7 @@ $PKG_MANAGER -Syy --noconfirm --needed \
   power-profiles-daemon \
   python-gobject \
   python-poetry-core \
+  python-terminaltexteffects \
   ripgrep \
   satty \
   slurp \
@@ -155,7 +156,6 @@ if [ -z "$OMARCHY_ARM" ]; then
     obs-studio \
     obsidian \
     pinta \
-    python-terminaltexteffects \
     qt5-wayland \
     signal-desktop \
     spotify \
