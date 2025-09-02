@@ -14,10 +14,10 @@ fi
 
 case "$COMMAND" in
 create)
-  DESC="$(omarchy-version)"
+  DESC="$(${OMARCHY_PATH}/bin/omarchy-version)"
 
   echo -e "\e[32mCreate system snapshot\e[0m"
-  
+
   # Get existing snapper config names from CSV output
   mapfile -t CONFIGS < <(sudo snapper --csvout list-configs | awk -F, 'NR>1 {print $1}')
 
@@ -25,6 +25,12 @@ create)
     sudo snapper -c "$config" create -c number -d "$DESC"
   done
   echo
+  #
+  # # Trigger limine update after creating snapshots
+  # if [[ -x "${OMARCHY_PATH}/bin/omarchy-limine-update" ]]; then
+  #   echo -e "\e[32mUpdating Limine configuration...\e[0m"
+  #   sudo "${OMARCHY_PATH}/bin/omarchy-limine-update"
+  # fi
   ;;
 restore)
   sudo limine-snapper-restore

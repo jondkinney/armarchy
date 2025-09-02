@@ -43,12 +43,15 @@ if ! flock -n 200; then
 fi
 
 # Update the Limine configuration
-if command -v omarchy-limine-update >/dev/null 2>&1; then
+OMARCHY_BIN=${OMARCHY_PATH:-$HOME/.local/share/omarchy/bin}
+if [[ -x "$OMARCHY_BIN/omarchy-limine-update" ]]; then
+    "$OMARCHY_BIN/omarchy-limine-update"
+elif command -v omarchy-limine-update >/dev/null 2>&1; then
     omarchy-limine-update
 elif [[ -x /usr/local/bin/omarchy-limine-update ]]; then
     /usr/local/bin/omarchy-limine-update
 else
-    echo "ERROR: omarchy-limine-update not found in PATH or /usr/local/bin" >&2
+    echo "ERROR: omarchy-limine-update not found" >&2
     exit 1
 fi
 

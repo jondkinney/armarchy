@@ -1,10 +1,6 @@
 #!/bin/bash
 
-# Update Limine configuration with hierarchical menu structure
-# This script generates a tree-like menu with Omarchy at the top level
-# and snapshots organized underneath
-
-set -ex  # Enable debugging - show commands and exit on error
+set -e # Exit on error
 
 LIMINE_CONF="/boot/limine.conf"
 LIMINE_CONF_EFI_LIMINE="/boot/EFI/limine/limine.conf"
@@ -14,62 +10,48 @@ MACHINE_ID=$(cat /etc/machine-id)
 
 # Determine limine.conf location (check multiple possible locations)
 if [[ -f "$LIMINE_CONF_EFI_BOOT" ]]; then
-    LIMINE_CONFIG="$LIMINE_CONF_EFI_BOOT"
-    EFI_MODE=true
+  LIMINE_CONFIG="$LIMINE_CONF_EFI_BOOT"
+  EFI_MODE=true
 elif [[ -f "$LIMINE_CONF_EFI_LIMINE" ]]; then
-    LIMINE_CONFIG="$LIMINE_CONF_EFI_LIMINE"
-    EFI_MODE=true
+  LIMINE_CONFIG="$LIMINE_CONF_EFI_LIMINE"
+  EFI_MODE=true
 else
-    LIMINE_CONFIG="$LIMINE_CONF"
-    EFI_MODE=false
+  LIMINE_CONFIG="$LIMINE_CONF"
+  EFI_MODE=false
 fi
 
 # Backup existing config
 if [[ -f "$LIMINE_CONFIG" ]]; then
-    cp "$LIMINE_CONFIG" "${LIMINE_CONFIG}.bak"
+  sudo cp "$LIMINE_CONFIG" "${LIMINE_CONFIG}.bak"
 fi
-
 
 # Function to get latest kernel version
 get_latest_kernel() {
-    # ARM64 uses Image instead of vmlinuz
-    if [[ "$(uname -m)" == "aarch64" ]]; then
-        if [[ -f /boot/Image ]]; then
-            echo "linux"  # ARM64 typically just uses "linux" as version
-        fi
-    else
-        ls /boot/vmlinuz-* 2>/dev/null | sort -V | tail -1 | sed 's|/boot/vmlinuz-||'
+  # ARM64 uses Image instead of vmlinuz
+  if [[ "$(uname -m)" == "aarch64" ]]; then
+    if [[ -f /boot/Image ]]; then
+      echo "linux" # ARM64 typically just uses "linux" as version
     fi
-}
-
-# Function to get kernel file hash
-get_file_hash() {
-    local file="$1"
-    if [[ -f "$file" ]]; then
-        sha256sum "$file" | cut -d' ' -f1
-    else
-        echo ""
-    fi
+  else
+    ls /boot/vmlinuz-* 2>/dev/null | sort -V | tail -1 | sed 's|/boot/vmlinuz-||'
+  fi
 }
 
 # Function to format snapshot description
 format_snapshot_desc() {
-    local desc="$1"
-    local num="$2"
-    local date="$3"
+  local desc="$1"
+  local num="$2"
 
-    # Try to extract meaningful info from description
-    if [[ -n "$desc" ]]; then
-        echo "$desc"
-    elif [[ -n "$date" ]]; then
-        echo "$date"
-    else
-        echo "Snapshot $num"
-    fi
+  # Clean up the description
+  if [[ -n "$desc" ]]; then
+    echo "$desc"
+  else
+    echo "Snapshot $num"
+  fi
 }
 
 # Start building the new config
-cat > "${LIMINE_CONFIG}.tmp" << 'EOF'
+cat >"${LIMINE_CONFIG}.tmp" <<'EOF'
 ### Read more at config document: https://github.com/limine-bootloader/limine/blob/trunk/CONFIG.md
 timeout: 12
 default_entry: 2
@@ -93,146 +75,109 @@ EOF
 
 KERNEL_VERSION=$(get_latest_kernel)
 
-# Build cmdline from scratch based on current system (don't read from existing config)
+# Build cmdline from current system
 ROOT_DEVICE=$(findmnt -n -o SOURCE /)
-# Extract just the device path (remove subvolume suffix like [/root])
 ROOT_DEVICE_CLEAN=$(echo "$ROOT_DEVICE" | sed 's/\[.*\]$//')
-
-# Skip encryption check - this system uses regular btrfs
 ROOT_UUID=$(blkid -o value -s UUID "$ROOT_DEVICE_CLEAN" 2>/dev/null)
+
 if [[ -z "$ROOT_UUID" ]]; then
-    # Fallback: try to find any btrfs UUID
-    ROOT_UUID=$(blkid | grep 'TYPE="btrfs"' | grep -oP 'UUID="\K[^"]+' | head -1)
+  ROOT_UUID=$(blkid | grep 'TYPE="btrfs"' | grep -oP 'UUID="\K[^"]+' | head -1)
 fi
 
 if [[ -n "$ROOT_UUID" ]]; then
-    # Check if we're using subvolumes
-    MOUNT_OPTIONS=$(findmnt -n -o OPTIONS /)
-    if echo "$MOUNT_OPTIONS" | grep -q "subvol="; then
-        SUBVOL=$(echo "$MOUNT_OPTIONS" | grep -o "subvol=[^,]*" | cut -d= -f2)
-        CMDLINE="root=UUID=$ROOT_UUID rootflags=subvol=$SUBVOL rw rootfstype=btrfs quiet splash"
-    else
-        CMDLINE="root=UUID=$ROOT_UUID rw rootfstype=btrfs quiet splash"
-    fi
+  # Check if we're using subvolumes
+  MOUNT_OPTIONS=$(findmnt -n -o OPTIONS /)
+  if echo "$MOUNT_OPTIONS" | grep -q "subvol="; then
+    SUBVOL=$(echo "$MOUNT_OPTIONS" | grep -o "subvol=[^,]*" | cut -d= -f2)
+    CMDLINE="root=UUID=$ROOT_UUID rootflags=subvol=$SUBVOL rw rootfstype=btrfs quiet splash"
+  else
+    CMDLINE="root=UUID=$ROOT_UUID rw rootfstype=btrfs quiet splash"
+  fi
 else
-    echo "ERROR: Could not detect root filesystem UUID!"
-    exit 1
+  echo "ERROR: Could not detect root filesystem UUID!"
+  exit 1
 fi
 
 # Main Omarchy entry (expandable by default with +)
-echo "/+Omarchy" >> "${LIMINE_CONFIG}.tmp"
-echo "comment: Omarchy" >> "${LIMINE_CONFIG}.tmp"
-echo "comment: machine-id=${MACHINE_ID} order-priority=50" >> "${LIMINE_CONFIG}.tmp"
+echo "/+Omarchy" >>"${LIMINE_CONFIG}.tmp"
+echo "comment: Omarchy" >>"${LIMINE_CONFIG}.tmp"
+echo "comment: machine-id=${MACHINE_ID} order-priority=50" >>"${LIMINE_CONFIG}.tmp"
 
 # Add current kernel entry under Omarchy
 if [[ -n "$KERNEL_VERSION" ]]; then
-    echo "  //linux" >> "${LIMINE_CONFIG}.tmp"
-    echo "  comment: $KERNEL_VERSION" >> "${LIMINE_CONFIG}.tmp"
+  echo "  //linux" >>"${LIMINE_CONFIG}.tmp"
+  echo "  comment: $KERNEL_VERSION" >>"${LIMINE_CONFIG}.tmp"
+  echo "  protocol: linux" >>"${LIMINE_CONFIG}.tmp"
 
-    if [[ "$EFI_MODE" == true ]] && [[ -f "/boot/EFI/Linux/${MACHINE_ID}_linux.efi" ]]; then
-        # Use UKI if available
-        KERNEL_HASH=$(get_file_hash "/boot/EFI/Linux/${MACHINE_ID}_linux.efi")
-        echo "  protocol: efi_chainload" >> "${LIMINE_CONFIG}.tmp"
-        echo "  image_path: boot():/EFI/Linux/${MACHINE_ID}_linux.efi#${KERNEL_HASH}" >> "${LIMINE_CONFIG}.tmp"
-    else
-        # Traditional kernel/initrd setup
-        echo "  protocol: linux" >> "${LIMINE_CONFIG}.tmp"
+  # ARM64 uses different paths
+  if [[ "$(uname -m)" == "aarch64" ]]; then
+    echo "  kernel_path: boot():/Image" >>"${LIMINE_CONFIG}.tmp"
+    if [[ -f "/boot/initramfs-linux.img" ]]; then
+      echo "  module_path: boot():/initramfs-linux.img" >>"${LIMINE_CONFIG}.tmp"
+    fi
+  else
+    echo "  kernel_path: boot():/vmlinuz-${KERNEL_VERSION}" >>"${LIMINE_CONFIG}.tmp"
+    if [[ -f "/boot/initramfs-${KERNEL_VERSION}.img" ]]; then
+      echo "  module_path: boot():/initramfs-${KERNEL_VERSION}.img" >>"${LIMINE_CONFIG}.tmp"
+    fi
+  fi
 
-        # ARM64 uses different paths
-        if [[ "$(uname -m)" == "aarch64" ]]; then
-            echo "  kernel_path: boot():/Image" >> "${LIMINE_CONFIG}.tmp"
-            if [[ -f "/boot/initramfs-linux.img" ]]; then
-                echo "  module_path: boot():/initramfs-linux.img" >> "${LIMINE_CONFIG}.tmp"
-            fi
+  echo "  kernel_cmdline: $CMDLINE" >>"${LIMINE_CONFIG}.tmp"
+fi
+
+# Add Snapshots submenu
+echo "" >>"${LIMINE_CONFIG}.tmp"
+echo "  //Snapshots" >>"${LIMINE_CONFIG}.tmp"
+echo "  comment: Select a snapshot to boot into" >>"${LIMINE_CONFIG}.tmp"
+
+# Parse existing snapshot entries from the backup config
+if [[ -f "${LIMINE_CONFIG}.bak" ]]; then
+  # Extract snapshot entries from existing config
+  grep -E "^/Snapshot [0-9]+" "${LIMINE_CONFIG}.bak" | while read -r line; do
+    # Parse the snapshot line
+    SNAPSHOT_DESC=$(echo "$line" | sed 's|^/||')
+    NUM=$(echo "$line" | grep -oE "Snapshot [0-9]+" | grep -oE "[0-9]+")
+
+    if [[ -n "$NUM" ]]; then
+      # Format the description properly
+      DESC_CLEAN=$(echo "$SNAPSHOT_DESC" | sed "s|Snapshot $NUM - ||" | sed 's|Snapshot [0-9]* ||')
+
+      echo "    ///$DESC_CLEAN" >>"${LIMINE_CONFIG}.tmp"
+      echo "    comment: Snapshot $NUM" >>"${LIMINE_CONFIG}.tmp"
+      echo "    protocol: linux" >>"${LIMINE_CONFIG}.tmp"
+
+      # ARM64 uses different paths
+      if [[ "$(uname -m)" == "aarch64" ]]; then
+        echo "    kernel_path: boot():/Image" >>"${LIMINE_CONFIG}.tmp"
+        echo "    module_path: boot():/initramfs-linux.img" >>"${LIMINE_CONFIG}.tmp"
+      else
+        # Get kernel path from existing config if available
+        KERNEL_PATH=$(grep -A5 "^/Snapshot $NUM" "${LIMINE_CONFIG}.bak" | grep "path:" | head -1 | awk '{print $2}')
+        MODULE_PATH=$(grep -A5 "^/Snapshot $NUM" "${LIMINE_CONFIG}.bak" | grep "module_path:" | head -1 | awk '{print $2}')
+
+        if [[ -n "$KERNEL_PATH" ]]; then
+          echo "    kernel_path: $KERNEL_PATH" >>"${LIMINE_CONFIG}.tmp"
         else
-            echo "  kernel_path: boot():/vmlinuz-${KERNEL_VERSION}" >> "${LIMINE_CONFIG}.tmp"
-            if [[ -f "/boot/initramfs-${KERNEL_VERSION}.img" ]]; then
-                echo "  module_path: boot():/initramfs-${KERNEL_VERSION}.img" >> "${LIMINE_CONFIG}.tmp"
-            fi
+          echo "    kernel_path: boot():/vmlinuz-${KERNEL_VERSION}" >>"${LIMINE_CONFIG}.tmp"
         fi
+
+        if [[ -n "$MODULE_PATH" ]]; then
+          echo "    module_path: $MODULE_PATH" >>"${LIMINE_CONFIG}.tmp"
+        elif [[ -f "/boot/initramfs-${KERNEL_VERSION}.img" ]]; then
+          echo "    module_path: boot():/initramfs-${KERNEL_VERSION}.img" >>"${LIMINE_CONFIG}.tmp"
+        fi
+      fi
+
+      # Use the correct snapshot subvolume path
+      SNAPSHOT_SUBVOL="root/.snapshots/$NUM/snapshot"
+      SNAPSHOT_CMDLINE=$(echo "$CMDLINE" | sed "s|rootflags=subvol=[^ ]*|rootflags=subvol=$SNAPSHOT_SUBVOL|")
+      echo "    kernel_cmdline: $SNAPSHOT_CMDLINE" >>"${LIMINE_CONFIG}.tmp"
+      echo "" >>"${LIMINE_CONFIG}.tmp"
     fi
-
-    echo "  kernel_cmdline: $CMDLINE" >> "${LIMINE_CONFIG}.tmp"
+  done
 fi
-
-# Add Snapshots submenu if snapper is available
-if command -v snapper &>/dev/null && snapper list-configs &>/dev/null 2>&1; then
-    # Get root config snapshots
-    SNAPSHOTS=$(snapper -c root list --columns number,date,description 2>/dev/null | tail -n +4 | head -5)
-
-    if [[ -n "$SNAPSHOTS" ]]; then
-        echo "" >> "${LIMINE_CONFIG}.tmp"
-        echo "  //Snapshots" >> "${LIMINE_CONFIG}.tmp"
-        echo "  comment: Select a snapshot to boot into" >> "${LIMINE_CONFIG}.tmp"
-
-        while IFS= read -r line; do
-            if [[ -z "$line" ]]; then continue; fi
-
-            # Parse snapshot info
-            NUM=$(echo "$line" | awk '{print $1}')
-            DATE=$(echo "$line" | awk '{print $3" "$4}')
-            DESC=$(echo "$line" | cut -d'|' -f3- | sed 's/^ *//; s/ *$//')
-
-            # Skip if no snapshot number
-            if [[ -z "$NUM" ]] || [[ "$NUM" == "0" ]]; then continue; fi
-
-            # Check if snapshot subvolume exists
-            SNAPSHOT_SUBVOL="@/.snapshots/$NUM/snapshot"
-            if ! btrfs subvolume list / 2>/dev/null | grep -q "$SNAPSHOT_SUBVOL"; then
-                continue
-            fi
-
-            # Format the description
-            SNAPSHOT_DESC=$(format_snapshot_desc "$DESC" "$NUM" "$DATE")
-
-            # Add snapshot entry
-            echo "    ///$SNAPSHOT_DESC" >> "${LIMINE_CONFIG}.tmp"
-            echo "    comment: Snapshot $NUM" >> "${LIMINE_CONFIG}.tmp"
-
-            # Find kernel in snapshot
-            SNAPSHOT_KERNEL=""
-            if [[ -d "/@/.snapshots/$NUM/snapshot/boot" ]]; then
-                SNAPSHOT_KERNEL=$(ls /@/.snapshots/$NUM/snapshot/boot/vmlinuz-* 2>/dev/null | sort -V | tail -1 | xargs basename | sed 's/vmlinuz-//')
-            fi
-
-            if [[ -z "$SNAPSHOT_KERNEL" ]]; then
-                SNAPSHOT_KERNEL="$KERNEL_VERSION"
-            fi
-
-            echo "      ////linux" >> "${LIMINE_CONFIG}.tmp"
-            echo "      comment: $SNAPSHOT_KERNEL" >> "${LIMINE_CONFIG}.tmp"
-
-            if [[ "$EFI_MODE" == true ]] && [[ -f "/boot/EFI/Linux/${MACHINE_ID}_linux.efi" ]]; then
-                KERNEL_HASH=$(get_file_hash "/boot/EFI/Linux/${MACHINE_ID}_linux.efi")
-                echo "      protocol: efi_chainload" >> "${LIMINE_CONFIG}.tmp"
-                echo "      image_path: boot():/EFI/Linux/${MACHINE_ID}_linux.efi#${KERNEL_HASH}" >> "${LIMINE_CONFIG}.tmp"
-            else
-                echo "      protocol: linux" >> "${LIMINE_CONFIG}.tmp"
-
-                # ARM64 uses different paths
-                if [[ "$(uname -m)" == "aarch64" ]]; then
-                    echo "      kernel_path: boot():/Image" >> "${LIMINE_CONFIG}.tmp"
-                    if [[ -f "/boot/initramfs-linux.img" ]]; then
-                        echo "      module_path: boot():/initramfs-linux.img" >> "${LIMINE_CONFIG}.tmp"
-                    fi
-                else
-                    echo "      kernel_path: boot():/vmlinuz-${SNAPSHOT_KERNEL}" >> "${LIMINE_CONFIG}.tmp"
-                    if [[ -f "/boot/initramfs-${SNAPSHOT_KERNEL}.img" ]]; then
-                        echo "      module_path: boot():/initramfs-${SNAPSHOT_KERNEL}.img" >> "${LIMINE_CONFIG}.tmp"
-                    fi
-                fi
-            fi
-
-            # Modify cmdline for snapshot
-            SNAPSHOT_CMDLINE=$(echo "$CMDLINE" | sed "s|rootflags=subvol=@|rootflags=subvol=$SNAPSHOT_SUBVOL|")
-            echo "      kernel_cmdline: $SNAPSHOT_CMDLINE" >> "${LIMINE_CONFIG}.tmp"
-
-        done <<< "$SNAPSHOTS"
-    fi
-fi
-
 
 # Move the new config into place
-mv "${LIMINE_CONFIG}.tmp" "$LIMINE_CONFIG"
+sudo mv "${LIMINE_CONFIG}.tmp" "$LIMINE_CONFIG"
 
 echo "Limine configuration updated with hierarchical menu structure"
