@@ -461,6 +461,45 @@ ssh jon@10.211.55.9
 
 # Limine + Btrfs Snapshots on Parallels ARM64
 
+## ⚡ Quick Option: Automated Installation Script
+
+**For users who prefer automation over manual configuration:**
+
+You can skip the manual Limine installation process below by using our automated script that handles everything automatically:
+
+```bash
+# Download and run the automated Limine installation script
+curl -O https://raw.githubusercontent.com/jondkinney/armarchy/vm-testing/install-limine-automated.sh
+chmod +x install-limine-automated.sh
+./install-limine-automated.sh
+```
+
+**What the automated script does:**
+- ✅ Updates system packages
+- ✅ Installs development tools and AUR helper
+- ✅ Configures Snapper for Btrfs snapshots
+- ✅ Downloads Omarchy scripts from ARM fork repository
+- ✅ Installs Plymouth and configures boot hooks
+- ✅ Downloads and installs Limine 9.5.3 bootloader
+- ✅ Sets up hierarchical snapshot menu
+- ✅ Configures automatic snapshot synchronization
+- ✅ Creates global symlinks for command access
+
+**The script will prompt you to choose:**
+- **Test mode**: Boot Limine once for testing (keeps GRUB as default)
+- **Default mode**: Make Limine the permanent default bootloader
+
+**After running the automated script:**
+- The system will be fully configured with Limine bootloader
+- Skip ahead to **[📍 RESUME HERE: Post-Automated Script Installation](#-resume-here-post-automated-script-installation)** 
+- All manual steps (Step 0-11) are handled automatically
+
+---
+
+## 📋 Manual Installation (Skip if you used the automated script above)
+
+**For users who prefer step-by-step control:**
+
 ## Prerequisites
 
 - Fresh Arch Linux ARM64 on Parallels Desktop
@@ -980,6 +1019,22 @@ sudo efibootmgr -v | grep Limine
 ```
 
 It should show: `\EFI\BOOT\BOOTAA64.EFI`
+
+---
+
+# 📍 RESUME HERE: Post-Automated Script Installation
+
+**If you used the automated installation script above, resume from this point.**
+
+**Your system now has:**
+- ✅ Limine bootloader fully configured with hierarchical snapshots
+- ✅ All Omarchy scripts and services installed
+- ✅ Automatic snapshot monitoring active
+- ✅ Boot configuration set based on your preference (test/default)
+
+**Next: Install Parallels Tools for better VM integration**
+
+---
 
 ## Step 12: Installing Parallels Tools
 

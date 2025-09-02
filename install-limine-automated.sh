@@ -225,9 +225,35 @@ fi
 
 echo "Limine boot entry: Boot$ENTRY"
 
-# Set boot order (making Limine the default)
-LIMINE_NUM=$(sudo efibootmgr | grep "Limine" | cut -c5-8)
-sudo efibootmgr --bootorder ${LIMINE_NUM},0005,0002,0003,0000,0004
+echo ""
+echo "=== Boot Order Configuration ==="
+echo "Choose how you want to configure Limine bootloader:"
+echo "1. Test mode - Boot Limine once for testing (keeps GRUB as default)"
+echo "2. Default mode - Make Limine the permanent default bootloader"
+echo ""
+
+while true; do
+    read -p "Enter your choice (1 for test, 2 for default): " BOOT_CHOICE
+    case $BOOT_CHOICE in
+        1)
+            echo "Setting up Limine for testing (next boot only)..."
+            LIMINE_NUM=$(sudo efibootmgr | grep "Limine" | cut -c5-8)
+            sudo efibootmgr --bootnext $LIMINE_NUM
+            BOOT_MODE="test"
+            break
+            ;;
+        2)
+            echo "Making Limine the permanent default bootloader..."
+            LIMINE_NUM=$(sudo efibootmgr | grep "Limine" | cut -c5-8)
+            sudo efibootmgr --bootorder ${LIMINE_NUM},0005,0002,0003,0000,0004
+            BOOT_MODE="default"
+            break
+            ;;
+        *)
+            echo "Invalid choice. Please enter 1 or 2."
+            ;;
+    esac
+done
 
 
 echo ""
@@ -353,24 +379,46 @@ echo "==============================================="
 echo "✅ Installation Complete!"
 echo "==============================================="
 echo ""
-echo "🚀 READY TO BOOT:"
-echo "Limine is now configured as the default bootloader!"
-echo ""
-echo "Next steps:"
-echo "1. Reboot to use Limine:"
-echo "   sudo reboot"
-echo ""
-echo "   You will see:"
-echo "   - Limine bootloader with Tokyo Night theme"
-echo "   - 'Omarchy Bootloader' branding"
-echo "   - Hierarchical menu: /+Omarchy → //Snapshots"
-echo ""
-echo "2. If you need to boot back to GRUB temporarily:"
-echo "   - During boot, access UEFI/BIOS boot menu"
-echo "   - Select GRUB from the boot options"
-echo ""
-echo "3. To change boot order later if needed:"
-echo "   sudo efibootmgr --bootorder [entry_numbers]"
+if [[ "$BOOT_MODE" == "test" ]]; then
+    echo "🧪 TESTING MODE CONFIGURED:"
+    echo "Limine is set for next boot only (testing mode)!"
+    echo ""
+    echo "Next steps:"
+    echo "1. Reboot to test Limine:"
+    echo "   sudo reboot"
+    echo ""
+    echo "   You should see:"
+    echo "   - Limine bootloader with Tokyo Night theme"
+    echo "   - 'Omarchy Bootloader' branding"
+    echo "   - Hierarchical menu: /+Omarchy → //Snapshots"
+    echo ""
+    echo "2. If Limine boots successfully and you want to make it permanent:"
+    echo "   LIMINE_NUM=\$(sudo efibootmgr | grep 'Limine' | cut -c5-8)"
+    echo "   sudo efibootmgr --bootorder \$LIMINE_NUM,0005,0002,0003,0000,0004"
+    echo ""
+    echo "3. If Limine fails to boot properly:"
+    echo "   - System will automatically boot back to GRUB on next restart"
+    echo "   - Or reset VM from Parallels (hard reboot)"
+else
+    echo "🚀 READY TO BOOT:"
+    echo "Limine is now configured as the default bootloader!"
+    echo ""
+    echo "Next steps:"
+    echo "1. Reboot to use Limine:"
+    echo "   sudo reboot"
+    echo ""
+    echo "   You will see:"
+    echo "   - Limine bootloader with Tokyo Night theme"
+    echo "   - 'Omarchy Bootloader' branding"
+    echo "   - Hierarchical menu: /+Omarchy → //Snapshots"
+    echo ""
+    echo "2. If you need to boot back to GRUB temporarily:"
+    echo "   - During boot, access UEFI/BIOS boot menu"
+    echo "   - Select GRUB from the boot options"
+    echo ""
+    echo "3. To change boot order later if needed:"
+    echo "   sudo efibootmgr --bootorder [entry_numbers]"
+fi
 echo ""
 echo "Features installed:"
 echo "✅ Snapper for Btrfs snapshots (limit: 5 snapshots)"
