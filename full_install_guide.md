@@ -540,8 +540,8 @@ fi
 #### Configure settings (Omarchy defaults)
 
 ```bash
-sudo sed -i 's/^TIMELINE_CREATE="yes"/TIMELINE_CREATE="no"/' /etc/snapper/configs/root
-sudo sed -i 's/^NUMBER_LIMIT="50"/NUMBER_LIMIT="5"/' /etc/snapper/configs/root
+sudo sed -i 's/^TIMELINE_CREATE="yes"/TIMELINE_CREATE="no"/' /etc/snapper/configs/root &&
+sudo sed -i 's/^NUMBER_LIMIT="50"/NUMBER_LIMIT="5"/' /etc/snapper/configs/root &&
 sudo sed -i 's/^NUMBER_LIMIT_IMPORTANT="10"/NUMBER_LIMIT_IMPORTANT="5"/' /etc/snapper/configs/root
 ```
 
@@ -551,40 +551,51 @@ sudo sed -i 's/^NUMBER_LIMIT_IMPORTANT="10"/NUMBER_LIMIT_IMPORTANT="5"/' /etc/sn
 
 ```bash
 # Create directory structure
-OMARCHY_BIN="$HOME/.local/share/omarchy/bin"
+OMARCHY_BIN="$HOME/.local/share/omarchy/bin" &&
 mkdir -p "$OMARCHY_BIN"
 
 # Download Omarchy scripts from the ARM fork repository (vm-testing branch)
-cd /tmp
-rm -rf omarchy-tmp 2>/dev/null || true
-git clone --depth 1 --branch vm-testing https://github.com/jondkinney/armarchy.git omarchy-tmp
-cp omarchy-tmp/bin/omarchy-limine-update "$OMARCHY_BIN/"
-cp omarchy-tmp/bin/omarchy-limine-snapshot-hook "$OMARCHY_BIN/"
-chmod +x "$OMARCHY_BIN/omarchy-limine-update"
-chmod +x "$OMARCHY_BIN/omarchy-limine-snapshot-hook"
+cd /tmp &&
+rm -rf omarchy-tmp 2>/dev/null || true &&
+git clone --depth 1 --branch vm-testing https://github.com/jondkinney/armarchy.git omarchy-tmp &&
+cp omarchy-tmp/bin/omarchy-limine-update "$OMARCHY_BIN/" &&
+cp omarchy-tmp/bin/omarchy-limine-snapshot-hook "$OMARCHY_BIN/" &&
+chmod +x "$OMARCHY_BIN/omarchy-limine-update" &&
+chmod +x "$OMARCHY_BIN/omarchy-limine-snapshot-hook" &&
 
 # Make scripts globally accessible
-sudo ln -sf "$OMARCHY_BIN/omarchy-limine-update" /usr/local/bin/
-sudo ln -sf "$OMARCHY_BIN/omarchy-limine-snapshot-hook" /usr/local/bin/
+sudo ln -sf "$OMARCHY_BIN/omarchy-limine-update" /usr/local/bin/ &&
+sudo ln -sf "$OMARCHY_BIN/omarchy-limine-snapshot-hook" /usr/local/bin/ &&
+echo -e '\nSuccess: omarchy-limine-update and omarchy-limine-snapshot-hook installed!\n'
 ```
 
 ### Install Systemd Services
 
+sudo systemctl status omarchy-limine-snapshot.path --no-pager
+
 ```bash
-# Copy service files from the Omarchy repository
-sudo cp /tmp/omarchy-tmp/install/systemd/omarchy-limine-snapshot.service /etc/systemd/system/
-sudo cp /tmp/omarchy-tmp/install/systemd/omarchy-limine-snapshot.path /etc/systemd/system/
+sudo cp /tmp/omarchy-tmp/install/systemd/omarchy-limine-snapshot.service /etc/systemd/system/ &&
+sudo cp /tmp/omarchy-tmp/install/systemd/omarchy-limine-snapshot.path /etc/systemd/system/ &&
 sudo chmod 644 /etc/systemd/system/omarchy-limine-snapshot.*
+```
 
-# Install inotify-tools for directory monitoring
+Install inotify-tools for directory monitoring
+
+```bash
 sudo pacman -S --needed --noconfirm inotify-tools
+```
 
-# Enable automatic snapshot monitoring
-sudo systemctl daemon-reload
-sudo systemctl enable --now omarchy-limine-snapshot.path
+Enable automatic snapshot monitoring
+
+```bash
+sudo systemctl daemon-reload &&
+sudo systemctl enable --now omarchy-limine-snapshot.path &&
 sudo systemctl enable omarchy-limine-snapshot.service
+```
 
-# Verify services are running
+Verify services are running
+
+```bash
 sudo systemctl status omarchy-limine-snapshot.path --no-pager
 ```
 
@@ -750,11 +761,15 @@ ls -la "$EFI_DIR/BOOTAA64.EFI" "$EFI_DIR/limine.conf"
 
 #### Generate the hierarchical menu structure
 
-```bash
-# Run Omarchy's Limine update to create the hierarchical snapshot menu
-sudo omarchy-limine-update
+Run Omarchy's Limine update to create the hierarchical snapshot menu
 
-# Preview the final limine.conf with hierarchical menu
+```bash
+sudo omarchy-limine-update
+```
+
+Preview the final limine.conf with hierarchical menu
+
+```bash
 cat "$EFI_DIR/limine.conf"
 ```
 
@@ -762,14 +777,21 @@ cat "$EFI_DIR/limine.conf"
 
 Verify that the automatic system is working
 
+Test automatic snapshot detection and menu updates
+
 ```bash
-# Test automatic snapshot detection and menu updates
 sudo snapper -c root create --description "Test automatic updates"
+```
 
-# Wait a moment for the service to trigger, then check the menu
+Wait a moment for the service to trigger, then check the menu
+
+```bash
 cat "$EFI_DIR/limine.conf" | grep -A10 "//Snapshots"
+```
 
-# Monitor automatic updates in real-time (optional)
+Monitor automatic updates in real-time (optional)
+
+```bash
 sudo journalctl -u omarchy-limine-snapshot.service -f
 ```
 
@@ -811,11 +833,13 @@ Limine bootloader with hierarchical snapshot menu
 Once you've verified Limine works correctly set it as the default bootloader
 
 ```bash
-LIMINE_NUM=$(sudo efibootmgr | grep "Limine" | cut -c5-8)
+LIMINE_NUM=$(sudo efibootmgr | grep "Limine" | cut -c5-8) &&
 sudo efibootmgr --bootorder ${LIMINE_NUM},0005,0002,0003,0000,0004
 ```
 
 Verify `Limine (0001)` is now first in the BootOrder
+
+You should see something similar to this:
 
 ```bash
 BootCurrent: 0001
@@ -868,8 +892,8 @@ Both should be present in `/boot/EFI/BOOT/`
 If `BOOTAA64.EFI` is missing run:
 
 ```bash
-sudo mkdir -p /boot/EFI/BOOT
-cd /tmp/limine
+sudo mkdir -p /boot/EFI/BOOT &&
+cd /tmp/limine &&
 sudo install -m 0644 BOOTAA64.EFI /boot/EFI/BOOT/BOOTAA64.EFI
 ```
 
