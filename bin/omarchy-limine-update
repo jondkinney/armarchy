@@ -232,17 +232,6 @@ if command -v snapper &>/dev/null && snapper list-configs &>/dev/null 2>&1; then
     fi
 fi
 
-# Add EFI fallback entry
-echo "" >> "${LIMINE_CONFIG}.tmp"
-echo "/EFI fallback" >> "${LIMINE_CONFIG}.tmp"
-echo "comment: Default EFI loader" >> "${LIMINE_CONFIG}.tmp"
-echo "comment: order-priority=10" >> "${LIMINE_CONFIG}.tmp"
-echo "protocol: efi_chainload" >> "${LIMINE_CONFIG}.tmp"
-if [[ "$(uname -m)" == "aarch64" ]]; then
-    echo "image_path: boot():/EFI/BOOT/BOOTAA64.EFI" >> "${LIMINE_CONFIG}.tmp"
-else
-    echo "image_path: boot():/EFI/BOOT/BOOTX64.EFI" >> "${LIMINE_CONFIG}.tmp"
-fi
 
 # Move the new config into place
 mv "${LIMINE_CONFIG}.tmp" "$LIMINE_CONFIG"

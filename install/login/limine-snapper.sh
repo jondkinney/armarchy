@@ -50,8 +50,8 @@ EOF
     sudo sed -i '/^ENABLE_UKI=/d; /^ENABLE_LIMINE_FALLBACK=/d' /etc/default/limine
   fi
 
-  # We overwrite the whole thing knowing the limine-update will add the entries for us
-  sudo tee /boot/limine.conf <<EOF >/dev/null
+  # We overwrite the correct config file (the one Limine actually reads)
+  sudo tee "$limine_config" <<EOF >/dev/null
 ### Read more at config document: https://github.com/limine-bootloader/limine/blob/trunk/CONFIG.md
 #timeout: 3
 default_entry: 2
