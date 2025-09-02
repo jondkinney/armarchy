@@ -78,17 +78,39 @@ sudo sed -i 's/^NUMBER_LIMIT="50"/NUMBER_LIMIT="5"/' /etc/snapper/configs/root
 sudo sed -i 's/^NUMBER_LIMIT_IMPORTANT="10"/NUMBER_LIMIT_IMPORTANT="5"/' /etc/snapper/configs/root
 ```
 
-## Step 4: Enable Snapshot Synchronization
+## Step 4: Install Automatic Snapshot System
 
-Omarchy will automatically set up snapshot synchronization with Limine. This step requires Omarchy to be installed first:
+Install the Omarchy scripts and services for automatic snapshot menu updates:
+
+### Install Omarchy Scripts
 
 ```bash
-# Run the Omarchy Limine update script to generate the hierarchical menu
-# (Only available after Omarchy installation is complete)
-sudo omarchy-limine-update
+# Create directory structure
+OMARCHY_BIN="$HOME/.local/share/omarchy/bin"
+mkdir -p "$OMARCHY_BIN"
 
-# Verify the service is enabled (it should be set up automatically)
-sudo systemctl status omarchy-limine-snapshot.service --no-pager
+# Copy scripts from Omarchy repository (adjust path as needed)
+cp /path/to/omarchy/bin/omarchy-limine-update "$OMARCHY_BIN/"
+cp /path/to/omarchy/bin/omarchy-limine-snapshot-hook "$OMARCHY_BIN/"
+chmod +x "$OMARCHY_BIN/omarchy-limine-update"
+chmod +x "$OMARCHY_BIN/omarchy-limine-snapshot-hook"
+```
+
+### Install Systemd Services
+
+```bash
+# Copy service files
+sudo cp /path/to/omarchy/install/systemd/omarchy-limine-snapshot.service /etc/systemd/system/
+sudo cp /path/to/omarchy/install/systemd/omarchy-limine-snapshot.path /etc/systemd/system/
+sudo chmod 644 /etc/systemd/system/omarchy-limine-snapshot.*
+
+# Enable automatic snapshot monitoring
+sudo systemctl daemon-reload
+sudo systemctl enable --now omarchy-limine-snapshot.path
+sudo systemctl enable omarchy-limine-snapshot.service
+
+# Verify services are running
+sudo systemctl status omarchy-limine-snapshot.path --no-pager
 ```
 
 ## Step 5: Create Test Snapshots
@@ -249,12 +271,32 @@ ls -la "$EFI_DIR/BOOTAA64.EFI" "$EFI_DIR/limine.conf"
 
 ```bash
 # Run Omarchy's Limine update to create the hierarchical snapshot menu
-# (Only available after Omarchy installation is complete)
 sudo omarchy-limine-update
 
 # Preview the final limine.conf with hierarchical menu
 cat "$EFI_DIR/limine.conf"
 ```
+
+## Test Automatic Snapshot Updates
+
+Verify that the automatic system is working:
+
+```bash
+# Test automatic snapshot detection and menu updates
+sudo snapper -c root create --description "Test automatic updates"
+
+# Wait a moment for the service to trigger, then check the menu
+sleep 2
+cat "$EFI_DIR/limine.conf" | grep -A10 "//Snapshots"
+
+# Monitor automatic updates in real-time (optional)
+sudo journalctl -u omarchy-limine-snapshot.service -f
+```
+
+You should see:
+- Latest snapshot appears at the top (newest first)
+- Hierarchical structure: `/+Omarchy` → `//Snapshots` → `///Snapshot X`
+- Automatic updates when new snapshots are created
 
 ## Test Limine (One-Time Boot\*)
 
