@@ -5,12 +5,11 @@
 - Fresh Arch Linux ARM64 on Parallels Desktop
 - Btrfs filesystem with `/root` subvolume
 
-## Step 0: Prepare EFI Directory
+#### Prepare EFI Directory
 
-Ensure the EFI directory structure exists:
+Ensure the EFI directory structure exists. Run the following:
 
 ```bash
-# Set up EFI directory variables
 ESP="/boot"
 EFI_DIR="$ESP/EFI/BOOT"
 sudo mkdir -p "$EFI_DIR"
@@ -18,11 +17,15 @@ sudo mkdir -p "$EFI_DIR"
 
 ## Step 1: Install Development Tools
 
-```bash
-# Install base requirements
-sudo pacman -S --needed base-devel git
+#### Install base requirements
 
-# Install yay AUR helper (skip if already installed)
+```bash
+sudo pacman -S --needed base-devel git
+```
+
+#### Install yay AUR helper (skip if already installed)
+
+```bash
 if ! command -v yay &> /dev/null; then
     cd /tmp
     rm -rf yay 2>/dev/null || true
@@ -37,11 +40,16 @@ fi
 ## Step 2: Install Snapshot Tools
 
 ```bash
-# Install Snapper
 sudo pacman -S --needed --noconfirm snapper
+```
 
-# Install limine-mkinitcpio-hook for the btrfs-overlayfs hook (needed for snapshot booting)
-# This handles yay's interactive prompts automatically
+#### Install `limine-mkinitcpio-hook` for the `btrfs-overlayfs` hook\*
+
+> \*needed for snapshot booting
+
+This handles yay's interactive prompts automatically
+
+```bash
 (echo "1"; echo "N"; echo "N"; echo "N") | yay -S --noconfirm limine-mkinitcpio-hook || {
     echo "Note: If limine-mkinitcpio-hook installation had issues, trying manual approach..."
     # Fallback: Install with minimal interaction
@@ -51,15 +59,20 @@ sudo pacman -S --needed --noconfirm snapper
 
 ## Step 3: Configure Snapper
 
+#### Create Snapper config (skip if already exists)
+
 ```bash
-# Create Snapper config (skip if already exists)
 if ! sudo snapper -c root list &>/dev/null; then
     sudo snapper -c root create-config /
+    echo "Snapper config created"
 else
     echo "Snapper config for root already exists, skipping creation..."
 fi
+```
 
-# Configure settings (Omarchy defaults)
+#### Configure settings (Omarchy defaults)
+
+```bash
 sudo sed -i 's/^TIMELINE_CREATE="yes"/TIMELINE_CREATE="no"/' /etc/snapper/configs/root
 sudo sed -i 's/^NUMBER_LIMIT="50"/NUMBER_LIMIT="5"/' /etc/snapper/configs/root
 sudo sed -i 's/^NUMBER_LIMIT_IMPORTANT="10"/NUMBER_LIMIT_IMPORTANT="5"/' /etc/snapper/configs/root
@@ -70,7 +83,6 @@ sudo sed -i 's/^NUMBER_LIMIT_IMPORTANT="10"/NUMBER_LIMIT_IMPORTANT="5"/' /etc/sn
 We'll create a custom script since the Java-based tools don't work with ARM64 Limine v9 syntax:
 
 ```bash
-# Create custom sync script (uses EFI_DIR variable from Step 0)
 sudo tee /usr/local/bin/limine-snapshot-sync-arm <<EOF
 #!/bin/bash
 
@@ -222,52 +234,71 @@ sudo systemctl status limine-snapshot-sync-arm.service --no-pager
 
 ## Step 6: Create Test Snapshots
 
-```bash
-# Create snapshots
-sudo snapper -c root create --description "Initial setup"
-sudo snapper -c root list
+Note: We'll test the sync script after Limine is installed
 
-# Note: We'll test the sync script after Limine is installed
+```bash
+sudo snapper -c root create --description "Initial setup"
+```
+
+Show the last snapshot in the list
+
+```
+sudo snapper -c root list
 ```
 
 ## Step 7: Install Plymouth and Set Up mkinitcpio Hooks
 
-```bash
-# Install Plymouth for boot splash screen
-sudo pacman -S --needed --noconfirm plymouth
+#### Install Plymouth for boot splash screen
 
-# Configure hooks with Plymouth and btrfs-overlayfs for snapshot booting
+```bash
+sudo pacman -S --needed --noconfirm plymouth
+```
+
+#### Configure hooks with Plymouth and btrfs-overlayfs for snapshot booting
+
+```bash
 sudo tee /etc/mkinitcpio.conf.d/omarchy_hooks.conf <<'EOF'
 HOOKS=(base udev plymouth keyboard autodetect modconf kms keymap consolefont block encrypt filesystems fsck btrfs-overlayfs)
 EOF
+```
 
-# Regenerate initramfs (answering 'n' to limine-mkinitcpio prompt)
+#### Regenerate initramfs (answering 'n' to the prompt)
+
+```bash
+
 printf "n\n" | sudo mkinitcpio -P
 ```
 
-## 🎯 PARALLELS SNAPSHOT POINT
+## 🎯 PARALLELS SNAPSHOT POINT 🎯
 
-**Create a Parallels snapshot here!** This allows you to easily test different Limine versions or revert if something goes wrong with the bootloader installation.
+**Create a Parallels snapshot here!** This allows you to easily test different Limine versions or revert if something goes wrong with the following bootloader installation.
 
 ## Step 8: Install and Configure Limine
 
 This step combines downloading Limine, creating the configuration, and installing everything:
 
+#### Download Limine 9.5.3 binary directly
+
 ```bash
-# Download Limine 9.5.3 binary directly
 cd /tmp
 rm -rf limine 2>/dev/null || true
 git clone --depth 1 --branch v9.5.3-binary https://github.com/limine-bootloader/limine.git
 cd limine
+```
 
-# Verify the EFI file exists (binary tags store EFI at repo root)
+#### Verify the EFI file exists (binary tags store EFI at repo root)
+
+```bash
 if [[ ! -f "BOOTAA64.EFI" ]]; then
     echo "ERROR: BOOTAA64.EFI not found in repository!"
     exit 1
 fi
 ls -la BOOTAA64.EFI
+```
 
-# Create Tokyo Night themed config with working ARM64 syntax
+#### Create Tokyo Night themed config with working ARM64 syntax
+
+```bash
 sudo tee "$EFI_DIR/limine.conf" <<EOF
 # $EFI_DIR/limine.conf (Limine v9 syntax)
 timeout: 12
@@ -289,17 +320,28 @@ term_background_bright: 24283b
     module_path: boot():/initramfs-linux.img
     cmdline: root=UUID=YOUR_ROOT_UUID_HERE rw rootfstype=btrfs
 EOF
+```
 
-# Replace placeholder with actual UUID
+#### Replace placeholder with actual UUID
+
+```bash
 ROOT_UUID=$(blkid | grep 'TYPE="btrfs"' | grep -oP 'UUID="\K[^"]+' | head -1)
 if [[ -z "$ROOT_UUID" ]]; then
     echo "ERROR: Could not find Btrfs root UUID!"
     exit 1
 fi
 sudo sed -i "s/YOUR_ROOT_UUID_HERE/$ROOT_UUID/g" "$EFI_DIR/limine.conf"
-echo "Using root UUID: $ROOT_UUID"
+```
 
-# Create backup directory if it doesn't exist
+Show your Root UUID
+
+```bash
+echo "Using root UUID: $ROOT_UUID"
+```
+
+#### Create backup directory if it doesn't exist
+
+```bash
 BACKUP_DIR="${EFI_DIR}.bak"
 if [[ ! -d "$BACKUP_DIR" ]]; then
     echo "Creating backup: $EFI_DIR → $BACKUP_DIR"
@@ -308,20 +350,28 @@ if [[ ! -d "$BACKUP_DIR" ]]; then
         sudo cp -a "$EFI_DIR/." "$BACKUP_DIR/"
     fi
 fi
+```
 
-# Install Limine bootloader
+#### Install Limine bootloader
+
+```bash
 TMPDIR="/tmp/limine"
 echo "Installing $TMPDIR/BOOTAA64.EFI → $EFI_DIR/BOOTAA64.EFI"
 sudo install -m 0644 "$TMPDIR/BOOTAA64.EFI" "$EFI_DIR/BOOTAA64.EFI"
+```
 
-# Create or find Limine boot entry
+#### Create or find Limine boot entry
+
+```bash
 DISK="/dev/sda"
 ESP_NUM="2"
 LIMINE_LABEL="Limine"
-
-# Check if Limine boot entry already exists
 ENTRY=$(sudo efibootmgr -v | awk '/^Boot[0-9A-Fa-f]{4}/ && (/Limine/ || /\\\\EFI\\\\BOOT\\\\BOOTAA64.EFI/){gsub("^Boot","",$1);gsub("\\*","",$1);print $1;exit}')
+```
 
+#### Create the new Limine boot entry
+
+```bash
 if [[ -z "$ENTRY" ]]; then
     echo "Creating new Limine boot entry..."
     sudo efibootmgr -c -d "$DISK" -p "$ESP_NUM" -L "$LIMINE_LABEL" -l '\EFI\BOOT\BOOTAA64.EFI'
@@ -331,85 +381,32 @@ if [[ -z "$ENTRY" ]]; then
 else
     echo "Found existing Limine boot entry: Boot$ENTRY"
 fi
+```
 
-echo "Limine boot entry: Boot$ENTRY"
+#### Set boot order (keeping GRUB as default for safety)
 
-# Set boot order (keeping GRUB as default for safety)
+```bash
 LIMINE_NUM=$(sudo efibootmgr | grep "Limine" | cut -c5-8)
 sudo efibootmgr --bootorder 0005,${LIMINE_NUM},0002,0003,0000,0004
+```
 
-# Verify installation
+#### Verify installation
+
+```bash
 ls -la "$EFI_DIR/BOOTAA64.EFI" "$EFI_DIR/limine.conf"
-echo ""
-echo "=== Final Limine Configuration ==="
+```
+
+Preview the final `limine.conf`
+
+```bash
 cat "$EFI_DIR/limine.conf"
 ```
 
-## Test Limine (One-Time Boot)
+## Test Limine (One-Time Boot\*)
 
-Set Limine for the next boot only.
+> \*Set Limine for the next boot only
 
 ```bash
-echo "Setting Limine for next boot only (for testing):"
 LIMINE_NUM=$(sudo efibootmgr | grep "Limine" | cut -c5-8)
 sudo efibootmgr --bootnext $LIMINE_NUM
-sudo reboot
-```
-
-You should see:
-
-- Limine bootloader with Tokyo Night theme
-- "Omarchy Bootloader" branding
-- Arch Linux ARM entries
-- Snapshot entries
-
-If it doesn't work, the system will automatically boot back to GRUB on subsequent reboots.
-
-## Make Limine Permanent (After Testing)
-
-Once you've verified Limine works correctly:
-
-```bash
-# Make Limine the permanent default
-LIMINE_NUM=$(sudo efibootmgr | grep "Limine" | cut -c5-8)
-sudo efibootmgr --bootorder ${LIMINE_NUM},0005,0002,0003,0000,0004
-
-# Verify Limine is now first
-sudo efibootmgr
-```
-
-## Automatic Update Snapshots
-
-When using `omarchy-update` or `pacman -Syu`, snapshots will be created automatically and synced to the boot menu via the limine-snapper-sync service.
-
-## Manual Snapshot Creation (optional)
-
-> Note: Snapshots automatically appear in boot menu via the sync service we created earlier
-
-```bash
-sudo snapper -c root create --description "Description here"
-```
-
-## Troubleshooting
-
-If Limine shows "No volume contained a Limine configuration file":
-
-```bash
-# Check that both files exist in the same directory
-ls -la /boot/EFI/BOOT/BOOTAA64.EFI /boot/EFI/BOOT/limine.conf
-# Both should be present in /boot/EFI/BOOT/
-
-# If BOOTAA64.EFI is missing:
-sudo mkdir -p /boot/EFI/BOOT
-cd /tmp/limine
-sudo install -m 0644 BOOTAA64.EFI /boot/EFI/BOOT/BOOTAA64.EFI
-
-# If limine.conf is missing, recreate it:
-# The config must be in the same directory as BOOTAA64.EFI
-sudo cp /boot/EFI/BOOT/limine.conf.bak /boot/EFI/BOOT/limine.conf
-# Or regenerate using the Step 8 instructions above
-
-# Verify the boot entry points to the correct path:
-sudo efibootmgr -v | grep Limine
-# Should show: \EFI\BOOT\BOOTAA64.EFI
 ```
