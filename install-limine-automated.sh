@@ -44,6 +44,11 @@ cleanup() {
 trap cleanup EXIT
 
 echo ""
+echo "=== System Update ==="
+echo "Updating package repositories and system packages..."
+sudo pacman -Syu --noconfirm
+
+echo ""
 echo "=== Ensuring EFI Directory Exists ==="
 # Ensure EFI directory exists
 ESP="/boot"
@@ -220,9 +225,9 @@ fi
 
 echo "Limine boot entry: Boot$ENTRY"
 
-# Set boot order (keeping GRUB as default for safety)
+# Set boot order (making Limine the default)
 LIMINE_NUM=$(sudo efibootmgr | grep "Limine" | cut -c5-8)
-sudo efibootmgr --bootorder 0005,${LIMINE_NUM},0002,0003,0000,0004
+sudo efibootmgr --bootorder ${LIMINE_NUM},0005,0002,0003,0000,0004
 
 
 echo ""
@@ -348,26 +353,24 @@ echo "==============================================="
 echo "✅ Installation Complete!"
 echo "==============================================="
 echo ""
-echo "🔧 TESTING PHASE:"
-echo "Setting Limine for next boot only (for safety):"
-sudo efibootmgr --bootnext $LIMINE_NUM
+echo "🚀 READY TO BOOT:"
+echo "Limine is now configured as the default bootloader!"
 echo ""
 echo "Next steps:"
-echo "1. Test Limine bootloader:"
+echo "1. Reboot to use Limine:"
 echo "   sudo reboot"
 echo ""
-echo "   You should see:"
+echo "   You will see:"
 echo "   - Limine bootloader with Tokyo Night theme"
 echo "   - 'Omarchy Bootloader' branding"
 echo "   - Hierarchical menu: /+Omarchy → //Snapshots"
 echo ""
-echo "2. If Limine fails to boot properly:"
-echo "   - Reset VM from Parallels (or hard reboot)"
-echo "   - System will automatically boot back to GRUB"
+echo "2. If you need to boot back to GRUB temporarily:"
+echo "   - During boot, access UEFI/BIOS boot menu"
+echo "   - Select GRUB from the boot options"
 echo ""
-echo "3. If testing is successful, make Limine permanent:"
-echo "   LIMINE_NUM=\$(sudo efibootmgr | grep 'Limine' | cut -c5-8)"
-echo "   sudo efibootmgr --bootorder \$LIMINE_NUM,0005,0002,0003,0000,0004"
+echo "3. To change boot order later if needed:"
+echo "   sudo efibootmgr --bootorder [entry_numbers]"
 echo ""
 echo "Features installed:"
 echo "✅ Snapper for Btrfs snapshots (limit: 5 snapshots)"
