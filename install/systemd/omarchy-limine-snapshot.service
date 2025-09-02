@@ -5,23 +5,24 @@ After=snapper-cleanup.service
 [Service]
 Type=oneshot
 User=root
-ExecStart=/usr/bin/omarchy-limine-snapshot-hook
+ExecStart=omarchy-limine-snapshot-hook
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/jon/.local/share/omarchy/bin
 StandardOutput=journal
 StandardError=journal
 Restart=on-failure
 RestartSec=10s
 
-# Security hardening
+# Security hardening (relaxed for symlink access)
 CapabilityBoundingSet=CAP_SYS_ADMIN
 LockPersonality=yes
 ProtectControlGroups=yes
 ProtectClock=yes
-ProtectHome=yes
+ProtectHome=no
 ProtectHostname=yes
 ProtectKernelLogs=yes
 ProtectKernelModules=yes
 ProtectKernelTunables=yes
-ReadWritePaths=/tmp /boot /boot/EFI
+ReadWritePaths=/tmp /boot /boot/EFI /home
 RemoveIPC=yes
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 RestrictNamespaces=yes

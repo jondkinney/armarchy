@@ -106,10 +106,9 @@ EOF
   if [ -z "$OMARCHY_ARM" ]; then
     chrootable_systemctl_enable limine-snapper-sync.service
   else
-    # Enable our custom service for ARM64
+    # Install our custom service for ARM64 (but don't enable yet - will be enabled after first boot)
     sudo cp $OMARCHY_PATH/install/systemd/omarchy-limine-snapshot.* /etc/systemd/system/
-    chrootable_systemctl_enable omarchy-limine-snapshot.path
-    chrootable_systemctl_enable omarchy-limine-snapshot.service
+    echo "Limine snapshot service installed but not enabled - will be activated after first successful boot"
   fi
 fi
 
