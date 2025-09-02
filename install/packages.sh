@@ -140,21 +140,27 @@ $PKG_MANAGER -Syy --noconfirm --needed \
   xdg-desktop-portal-hyprland \
   xmlstarlet \
   xournalpp \
-  yaru-icon-theme \
   yay \
-  zoxide
+  zoxide \
 
+# Install additional packages for x86_64, non-ARM systems. Many of these are
+# not available or not stable on ARM when installed via AUR. So we will
+# install ARM compatible versions in the next section.
 if [ -z "$OMARCHY_ARM" ]; then
   $PKG_MANAGER -S --noconfirm --needed \
     1password-beta \
     1password-cli \
+    asdcontrol-git \
     localsend \
     obs-studio \
     obsidian \
     pinta \
+    python-terminaltexteffects \
+    qt5-wayland \
     signal-desktop \
     spotify \
     ttf-ia-writer \
+    ttf-jetbrains-mono-nerd \
     typora \
     tzupdate \
     ufw-docker \
