@@ -173,7 +173,7 @@ Enter User Management
 Choose "Set the default shell"
 ![[CleanShot 2025-08-30 at 22.07.55@2x.png]]
 
-Choose BASH (the Omarchy default). I highly recommend against changing to zsh or fish until you have everything fully configured how you want it. Even then all the update scripts, etc. run through Bash, so even though I'm a long time zsh user, I'm personally just going to stick with Bash and adapt my tooling accordingly.
+Choose BASH (the Omarchy default). I highly recommend against changing to zsh or fish until you have everything fully configured how you want it. Even then all the update scripts, etc. run through Bash, so even though I'm a long time zsh user, I'm personally just going to stick with Bash and adapt my tooling accordingly. The only thing I really miss is better auto completion, but there are packages for that.
 ![[CleanShot 2025-08-30 at 22.08.16@2x.png]]
 
 Shell configuration complete
@@ -429,6 +429,9 @@ sudo btrfs filesystem resize max /
 ```
 
 This command resizes the Btrfs filesystem on the root mount point (/) to use the maximum available space on the partition.
+
+Notice how `/dev/sda4` increases in size after this command.
+![[CleanShot 2025-09-02 at 14.09.54@2x.png]]
 
 At this point I'd recommend taking a snapshot of the system so that if any of the following steps fail, we can easily restore to this point in time.
 
