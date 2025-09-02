@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Skip for ARM64 systems since limine-snapper-sync is x86_64 only at the
+# moment (or is not yet compatible with limine v9 syntax)
+if [ -n "$OMARCHY_ARM" ]; then
+  echo "Skipping limine-snapper.sh on ARM64 systems. Use install-limine-automated.sh for proper ARM64 Limine + Snapper setup."
+  return 0
+fi
+
 if command -v limine &>/dev/null; then
   sudo tee /etc/mkinitcpio.conf.d/omarchy_hooks.conf <<EOF >/dev/null
 HOOKS=(base udev plymouth keyboard autodetect microcode modconf kms keymap consolefont block encrypt filesystems fsck btrfs-overlayfs)
