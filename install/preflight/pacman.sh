@@ -7,6 +7,7 @@ sudo pacman -S --needed --noconfirm base-devel
 if [[ "$OMARCHY_ARM" == "true" ]]; then
   sudo cp -f ~/.local/share/omarchy/default/pacman/pacman.conf.arm /etc/pacman.conf
   sudo cp -f ~/.local/share/omarchy/default/pacman/mirrorlist.arm /etc/pacman.d/mirrorlist
+  sudo cp -f ~/.local/share/omarchy/default/pacman/mirrorlist.asahi-alarm /etc/pacman.d/mirrorlist.asahi-alarm
 else
   sudo cp -f ~/.local/share/omarchy/default/pacman/pacman.conf /etc/pacman.conf
   sudo cp -f ~/.local/share/omarchy/default/pacman/mirrorlist /etc/pacman.d/mirrorlist

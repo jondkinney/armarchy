@@ -1108,60 +1108,23 @@ wget -qO- https://raw.githubusercontent.com/nilszeilon/armarchy/master/boot.sh |
 
 Follow the prompts and good luck...
 
-## Step 14: Configure ARM-Specific Packages (If Needed)
+## Step 14: ARM-Specific Configuration (Automatically Handled)
 
-### Configuring the `asahi-alarm` ARM mirror
+### asahi-alarm Mirror and Widevine Installation
 
-> Before we can install Omarchy, we need to setup the asahi-alarm mirror, since a few packages come from there on install.
+> **Good news!** ARM-specific configuration is now automatically handled during the Omarchy installation process.
 
-⚠️⚠️⚠️ ONLY DO THIS ON M-SERIES (m1/m2) MACS RUNNING `asahi-alarm` ⚠️⚠️⚠️
+**What happens automatically:**
 
-#### Setup the asahi-alarm mirror
+- ✅ **asahi-alarm mirror** is automatically configured in `pacman.conf` for ARM systems
+- ✅ **mirrorlist.asahi-alarm** is automatically created with the correct server
+- ✅ **widevine package** is automatically installed from asahi-alarm during package installation
+- ✅ **ARM-specific packages** are handled by the install scripts
 
-Edit the `/etc/pacman.conf` file and add the \[asahi-alarm\] entry before any others.
+**No manual configuration needed!** The Omarchy installer will:
 
-```
-sudo nvim /etc/pacman.conf
-```
+1. Detect that you're on an ARM64 system
+2. Use the ARM-specific pacman configuration that includes asahi-alarm
+3. Install widevine and other ARM packages automatically during the normal install process
 
-Add the `asahi-alarm` mirror as the first entry
-
-```bash
-[asahi-alarm]
-SigLevel = Optional TrustAll
-Include = /etc/pacman.d/mirrorlist.asahi-alarm
-```
-
-Enter "insert mode" by pressing `i` (i for insert) then type in the mirror like so by hand. Press Escape when you're done typing.
-
-![](install_guide/image113.png)
-
-Now save and quit with `:wq`
-
-![](install_guide/image114.png)
-
-Before we install any packages, we need to add the `asahi-alarm` mirrorlist file with the following command:
-
-```bash
-sudo nvim /etc/pacman.d/mirrorlist.asahi-alarm
-```
-
-Then add the following in that file:
-
-```
-Server = https://github.com/asahi-alarm/asahi-alarm/releases/download/$arch
-```
-
-![](install_guide/image115.png)
-
-Now update the local package mirror databases
-
-```
-sudo pacman -Syu
-```
-
-Install widevine
-
-```bash
-pacman -S asahi-alarm/widevine
-```
+Simply proceed with the Omarchy installation and everything will be configured correctly for your Apple Silicon Mac.
