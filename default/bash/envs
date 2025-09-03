@@ -4,3 +4,6 @@ export BAT_THEME=ansi
 
 # Add omarchy bin to PATH
 export PATH="$HOME/.local/share/omarchy/bin:$PATH"
+
+# Set terminal type for better color support
+export TERM=xterm-256color
