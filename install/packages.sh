@@ -183,6 +183,7 @@ if [ -n "$OMARCHY_ARM" ]; then
   fi
 
   source $OMARCHY_INSTALL/arm_install_scripts/walker-prebuilt.sh
+  source $OMARCHY_INSTALL/arm_install_scripts/asdcontrol-prebuilt.sh
   source $OMARCHY_INSTALL/arm_install_scripts/obsidian-appimage.sh
   source $OMARCHY_INSTALL/arm_install_scripts/omarchy-chromium-arm64-widevine.sh
 fi
