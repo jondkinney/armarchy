@@ -20,7 +20,9 @@ if [ "$EUID" -eq 0 ] && [ "$(uname -m)" = "aarch64" ]; then
     pacman -Q linux-asahi &>/dev/null ||
     pacman -Q asahi-scripts &>/dev/null; then
 
+    echo
     echo "Detected Asahi Linux - running initial setup..."
+    echo
 
     # install gum and asahi specific packages
     pacman -S --needed --noconfirm \
@@ -39,9 +41,9 @@ if [ "$EUID" -eq 0 ] && [ "$(uname -m)" = "aarch64" ]; then
       exit 1
     fi
 
-    echo "=================================="
-    echo "Omarchy Asahi Linux Setup"
-    echo "=================================="
+    echo "================================="
+    echo "    Omarchy Asahi Linux Setup    "
+    echo "================================="
     echo
 
     # Check if user already exists
@@ -94,27 +96,15 @@ if [ "$EUID" -eq 0 ] && [ "$(uname -m)" = "aarch64" ]; then
       echo "Added wheel group to sudoers"
     fi
 
-    # User setup complete - provide instructions to continue the Omarchy installation
     echo
-    echo "=================================="
-    echo "Initial setup complete!"
-    echo "=================================="
+    echo "================================================================"
+    echo "          Initial Asahi-Alarm specific setup complete!          "
+    echo "================================================================"
     echo
-    echo "Please follow these steps to continue:"
+    echo "Continuing with the rest of the standard Omarchy installation..."
     echo
-    echo "1. Log in as user: $username"
+    echo "----------------------------------------------------------------"
     echo
-    echo "   su - $username"
-    echo
-    echo "2. Run the following command to continue installation:"
-    echo
-    echo "   wget -qO- https://omarchy.org/install | bash"
-    echo
-    echo "=================================="
-    echo
-
-    # Exit the script here so it doesn't continue with the rest of install.sh
-    exit 0
 
   fi
 fi
