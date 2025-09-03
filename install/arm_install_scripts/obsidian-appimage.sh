@@ -36,20 +36,14 @@ StartupWMClass=obsidian
 EOF
 fi
 
-# Extract and install icon from AppImage
-if command -v unsquashfs &>/dev/null; then
-  cd /tmp
-  /usr/bin/obsidian --appimage-extract obsidian.png 2>/dev/null || true
-  if [ -f squashfs-root/obsidian.png ]; then
-    # Convert to 48x48 for omarchy's icon system
-    if command -v convert &>/dev/null; then
-      convert squashfs-root/obsidian.png -resize 48x48 ~/.local/share/omarchy/applications/icons/obsidian.png
-    else
-      cp squashfs-root/obsidian.png ~/.local/share/omarchy/applications/icons/obsidian.png
-    fi
-    rm -rf squashfs-root
-  fi
-  cd -
+# Download and install icon
+echo "Downloading Obsidian icon..."
+ICON_URL="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/obsidian.png"
+curl -L "$ICON_URL" -o ~/.local/share/omarchy/applications/icons/obsidian.png
+
+# Resize icon to 48x48 for omarchy's icon system if convert is available
+if command -v convert &>/dev/null; then
+  convert ~/.local/share/omarchy/applications/icons/obsidian.png -resize 48x48 ~/.local/share/omarchy/applications/icons/obsidian.png
 fi
 
 # Refresh applications using omarchy's system
