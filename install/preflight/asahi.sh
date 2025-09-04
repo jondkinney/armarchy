@@ -101,10 +101,16 @@ if [ "$EUID" -eq 0 ] && [ "$(uname -m)" = "aarch64" ]; then
     echo "          Initial Asahi-Alarm specific setup complete!          "
     echo "================================================================"
     echo
-    echo "Continuing with the rest of the standard Omarchy installation..."
+    echo "Continuing the rest of the installation as user $username..."
     echo
-    echo "----------------------------------------------------------------"
-    echo
+
+    # Re-run the boot script as the new user to continue installation
+    REPO="${OMARCHY_REPO:-nilszeilon/armarchy}"
+    REF="${OMARCHY_REF:-master}"
+    su - $username -c "curl -s https://raw.githubusercontent.com/${REPO}/${REF}/boot.sh | OMARCHY_REPO='${REPO}' OMARCHY_REF='${REF}' bash"
+
+    # Exit after su completes to prevent further execution as root
+    exit 0
 
   fi
 fi
