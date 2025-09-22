@@ -15,9 +15,8 @@ if [[ "$arch" == "aarch64" || "$arch" == "arm64" ]]; then
 
   # On ARM - check if this is initial Asahi setup (requires root)
   if [[ $EUID -eq 0 ]]; then
-    set -e  # Exit on error for all operations below
+    #set -e  # Exit on error for all operations below
 
-    echo
     # Running as root - check for Asahi indicators
     if grep -qi "asahi" /etc/os-release 2>/dev/null ||
       uname -r | grep -qi "asahi" ||
@@ -29,7 +28,6 @@ if [[ "$arch" == "aarch64" || "$arch" == "arm64" ]]; then
       arch_type="ARM"
     fi
     echo "Detected $arch_type Linux - setting up user account and running the omarchy installer..."
-    echo
 
     # Install gum for user interaction (needed in bootstrap mode when helpers aren't sourced)
     if ! command -v gum &>/dev/null; then
@@ -43,11 +41,6 @@ if [[ "$arch" == "aarch64" || "$arch" == "arm64" ]]; then
     # Check if user already exists
     echo "Setting up user account..."
     existing_users=$(awk -F: '$3 >= 1000 && $1 != "nobody" {print $1}' /etc/passwd)
-
-    # Ensure terminal is ready and flush any pending I/O
-    sync
-    sleep 1
-    echo ""  # Add blank line for spacing
 
     if [ -n "$existing_users" ]; then
       echo "Found existing users: $existing_users"
