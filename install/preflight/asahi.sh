@@ -44,17 +44,25 @@ if [[ "$arch" == "aarch64" || "$arch" == "arm64" ]]; then
     echo "Setting up user account..."
     existing_users=$(awk -F: '$3 >= 1000 && $1 != "nobody" {print $1}' /etc/passwd)
 
+    # Ensure terminal is ready and flush any pending I/O
+    sync
+    sleep 1
+    echo ""  # Add blank line for spacing
+
     if [ -n "$existing_users" ]; then
       echo "Found existing users: $existing_users"
-      use_existing=$(gum confirm "Use an existing user account?" && echo "yes" || echo "no")
+      # Test if gum is working properly
+      echo "Preparing user selection interface..."
+      # Force TTY allocation for gum when running from piped script
+      use_existing=$(gum confirm "Use an existing user account?" < /dev/tty && echo "yes" || echo "no")
 
       if [ "$use_existing" = "yes" ]; then
-        username=$(echo "$existing_users" | gum choose --header "Select user:")
+        username=$(echo "$existing_users" | gum choose --header "Select user:" < /dev/tty)
       else
-        username=$(gum input --placeholder "Enter new username")
+        username=$(gum input --placeholder "Enter new username" < /dev/tty)
       fi
     else
-      username=$(gum input --placeholder "Enter username for Omarchy")
+      username=$(gum input --placeholder "Enter username for Omarchy" < /dev/tty)
     fi
 
     # Create user if doesn't exist
@@ -64,8 +72,8 @@ if [[ "$arch" == "aarch64" || "$arch" == "arm64" ]]; then
 
       echo "Setting password for $username..."
       while true; do
-        password=$(gum input --password --placeholder "Enter password for $username")
-        password_confirm=$(gum input --password --placeholder "Confirm password")
+        password=$(gum input --password --placeholder "Enter password for $username" < /dev/tty)
+        password_confirm=$(gum input --password --placeholder "Confirm password" < /dev/tty)
 
         if [ "$password" = "$password_confirm" ]; then
           echo "$username:$password" | chpasswd
