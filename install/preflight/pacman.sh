@@ -11,7 +11,7 @@ if [[ -n ${OMARCHY_ONLINE_INSTALL:-} ]]; then
     sudo cp -f ~/.local/share/omarchy/default/pacman/pacman.conf /etc/pacman.conf
     sudo cp -f ~/.local/share/omarchy/default/pacman/mirrorlist /etc/pacman.d/mirrorlist
   fi
-fi
 
-# Refresh all repos
-sudo pacman -Syu --noconfirm
+  # Refresh all repos
+  sudo pacman -Syu --noconfirm
+fi

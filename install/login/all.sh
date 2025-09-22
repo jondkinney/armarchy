@@ -1,7 +1,7 @@
 run_logged $OMARCHY_INSTALL/login/plymouth.sh
 
 # Limine Snapper isn't supported on ARM at this time
-if [[ "$arch" != "aarch64" || "$arch" != "arm64" ]]; then
+if [ -z "$OMARCHY_ARM" ]; then
   run_logged $OMARCHY_INSTALL/login/limine-snapper.sh
 fi
 

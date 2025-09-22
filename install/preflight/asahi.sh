@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Prerequisites for installing Omarchy on a m-series macbook
 #
 # 1. Follow these instructions: https://asahi-alarm.org/ and choose the minimal installation (1)
@@ -11,40 +9,36 @@
 # Asahi Linux ARM setup script for Omarchy
 # This script automates the post-Asahi installation steps for MacBook M-series
 
-# Check if we're on Asahi Linux and need initial setup
-if [ "$EUID" -eq 0 ] && [ "$(uname -m)" = "aarch64" ]; then
+# Check if we're on ARM architecture
+arch=$(uname -m)
+if [[ "$arch" == "aarch64" || "$arch" == "arm64" ]]; then
 
-  # Check for Asahi indicators
-  if grep -qi "asahi" /etc/os-release 2>/dev/null ||
-    uname -r | grep -qi "asahi" ||
-    pacman -Q linux-asahi &>/dev/null ||
-    pacman -Q asahi-scripts &>/dev/null; then
+  # On ARM - check if this is initial Asahi setup (requires root)
+  if [[ $EUID -eq 0 ]]; then
+    set -e  # Exit on error for all operations below
 
     echo
-    echo "Detected Asahi Linux - running initial setup..."
-    echo
+    # Running as root - check for Asahi indicators
+    if grep -qi "asahi" /etc/os-release 2>/dev/null ||
+      uname -r | grep -qi "asahi" ||
+      pacman -Q linux-asahi &>/dev/null ||
+      pacman -Q asahi-scripts &>/dev/null; then
 
-    # install gum and asahi specific packages
-    pacman -S --needed --noconfirm \
-      gum \
-      asahi-audio \
-      pipewire-alsa \
-      pipewire-jack \
-      pipewire-pulse
-
-    set -e
-
-    # Check if running as root (required for initial setup)
-    if [ "$EUID" -ne 0 ]; then
-      echo "This script must be run as root for initial setup"
-      echo "Please run: sudo bash $0"
-      exit 1
+      arch_type="Asahi"
+    else
+      arch_type="ARM"
     fi
-
-    echo "================================="
-    echo "    Omarchy Asahi Linux Setup    "
-    echo "================================="
+    echo "Detected $arch_type Linux - setting up user account and running the omarchy installer..."
     echo
+
+    # Install gum for user interaction (needed in bootstrap mode when helpers aren't sourced)
+    if ! command -v gum &>/dev/null; then
+      echo "Installing gum for interactive setup..."
+      pacman -S --needed --noconfirm gum || {
+        echo "Error: Failed to install gum"
+        exit 1
+      }
+    fi
 
     # Check if user already exists
     echo "Setting up user account..."
@@ -97,20 +91,23 @@ if [ "$EUID" -eq 0 ] && [ "$(uname -m)" = "aarch64" ]; then
     fi
 
     echo
-    echo "================================================================"
-    echo "          Initial Asahi-Alarm specific setup complete!          "
-    echo "================================================================"
-    echo
+    echo "Initial user setup complete!"
     echo "Continuing the rest of the installation as user $username..."
     echo
 
     # Re-run the boot script as the new user to continue installation
-    REPO="${OMARCHY_REPO:-nilszeilon/armarchy}"
-    REF="${OMARCHY_REF:-master}"
+    REPO="${OMARCHY_REPO:-jondkinney/armarchy}"
+    REF="${OMARCHY_REF:-amarchy-3-x}"
     su - $username -c "curl -s https://raw.githubusercontent.com/${REPO}/${REF}/boot.sh | OMARCHY_REPO='${REPO}' OMARCHY_REF='${REF}' bash"
 
-    # Exit after su completes to prevent further execution as root
-    exit 0
-
+      # Exit after su completes to prevent further execution as root
+      exit 0
+    fi
+  else
+    # On ARM but not root - error for initial setup
+    echo "This script must be run as root for initial setup"
+    echo "Please run: sudo bash $0"
+    exit 1
   fi
 fi
+# If not on ARM at all, script continues normally (part of regular install flow)

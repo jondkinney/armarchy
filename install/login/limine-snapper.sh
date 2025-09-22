@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Skip for ARM64 systems since limine-snapper-sync is x86_64 only at the
 # moment (or is not yet compatible with limine v9 syntax)
 if [ -n "$OMARCHY_ARM" ]; then

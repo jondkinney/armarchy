@@ -19,22 +19,7 @@ else
   PKG_MANAGER="sudo pacman"
 fi
 
-# Handle jack2 to pipewire-jack transition proactively
-# pipewire-jack provides jack functionality and conflicts with jack2
-# Install pipewire-jack first to prevent conflicts during main package installation
-if pacman -Q jack2 &>/dev/null; then
-  echo "Replacing jack2 with pipewire-jack..."
-  printf "y\ny\n" | sudo pacman -S --needed pipewire-jack
-else
-  echo "Installing pipewire-jack to prevent jack2 conflict..."
-  sudo pacman -S --noconfirm --needed pipewire-jack
-fi
-
-# Install packages (no sync, already done in repositories.sh)
 $PKG_MANAGER -Syy --noconfirm --needed \
-  1password-beta \
-  1password-cli \
-  asdcontrol-git \
   alacritty \
   avahi \
   bash-completion \
@@ -142,7 +127,7 @@ $PKG_MANAGER -Syy --noconfirm --needed \
   xmlstarlet \
   xournalpp \
   yay \
-  zoxide \
+  zoxide
 
 # Install additional packages for x86_64, non-ARM systems. Many of these are
 # not available or not stable on ARM when installed via AUR. So we will
