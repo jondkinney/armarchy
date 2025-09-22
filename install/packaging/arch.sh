@@ -20,6 +20,13 @@ if [ -n "$OMARCHY_ARM" ]; then
   source $OMARCHY_INSTALL/arm_install_scripts/asdcontrol-prebuilt.sh
   source $OMARCHY_INSTALL/arm_install_scripts/obsidian-appimage.sh
   source $OMARCHY_INSTALL/arm_install_scripts/omarchy-chromium-arm64.sh
+
+  # Post-install tasks for ARM packages
+  # Update icon cache for yaru-icon-theme (needed on ARM)
+  if [ -d "/usr/share/icons/Yaru" ]; then
+    echo "Updating Yaru icon cache for ARM..."
+    sudo gtk-update-icon-cache /usr/share/icons/Yaru
+  fi
 else
   echo "Installing x86_64-specific packages..."
 
