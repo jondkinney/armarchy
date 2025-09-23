@@ -9,27 +9,9 @@ if [[ $EUID -eq 0 ]]; then
     }
   fi
 
-  log_pause_file=${OMARCHY_LOG_PAUSE_FILE:-/tmp/omarchy-log-output.paused}
-
-  pause_log_output() {
-    if [ -n "$log_pause_file" ]; then
-      touch "$log_pause_file"
-    fi
-  }
-
-  resume_log_output() {
-    if [ -n "$log_pause_file" ]; then
-      rm -f "$log_pause_file"
-    fi
-  }
-
-  pause_log_output
-  trap resume_log_output EXIT
-
   if [ -n "$existing_users" ]; then
     echo "Found existing users:"
     echo "$existing_users" | tr ' ' '\n' | sed 's/^/  - /'
-    echo
 
     # Convert existing users to an array for gum
     readarray -t user_array <<< "$existing_users"
@@ -167,9 +149,6 @@ if [[ $EUID -eq 0 ]]; then
     echo "%wheel ALL=(ALL:ALL) ALL" >>/etc/sudoers
     echo "Added wheel group to sudoers"
   fi
-
-  resume_log_output
-  trap - EXIT
 
   echo
   echo "Initial user setup complete!"
