@@ -14,6 +14,15 @@ export PATH="$OMARCHY_PATH/bin:$PATH"
 arch=$(uname -m)
 if [[ "$arch" == "aarch64" || "$arch" == "arm64" ]]; then
   export OMARCHY_ARM=true
+
+  # Detect Asahi Linux specifically (uses U-Boot, can't use Limine)
+  if grep -qi "asahi" /etc/os-release 2>/dev/null ||
+    uname -r | grep -qi "asahi" ||
+    pacman -Q linux-asahi &>/dev/null ||
+    pacman -Q asahi-scripts &>/dev/null; then
+
+    export ASAHI_ALARM=true
+  fi
 fi
 
 # Install
