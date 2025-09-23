@@ -27,16 +27,46 @@ if [[ $EUID -eq 0 ]]; then
   trap resume_log_output EXIT
 
   if [ -n "$existing_users" ]; then
-    echo "Found existing users: $existing_users"
+    echo "Found existing users:"
+    echo "$existing_users" | tr ' ' '\n' | sed 's/^/  - /'
+    echo
 
-    # Force TTY allocation for gum when running from piped script
-    if gum confirm "Use an existing user account?" < /dev/tty; then
-      username=$(echo "$existing_users" | gum choose --header "Select user:")
-    else
-      username=$(gum input --placeholder "Enter new username for Omarchy" < /dev/tty)
-    fi
+    # Convert existing users to an array for gum
+    readarray -t user_array <<< "$existing_users"
+
+    # Loop until we get valid input
+    while true; do
+      # Force TTY allocation for gum when running from piped script
+      if gum confirm "Use an existing user account?" < /dev/tty; then
+        # Pass user array to gum choose
+        # Filter out "nothing selected" message while preserving the UI
+        username=$(gum choose --header "Select user:" "${user_array[@]}" < /dev/tty 2> >(grep -v "nothing selected" >&2))
+        exit_code=$?
+
+        # Check if user cancelled or nothing was selected
+        if [ $exit_code -ne 0 ] || [ -z "$username" ]; then
+          echo "No user selected. Please try again."
+          continue
+        fi
+      else
+        username=$(gum input --placeholder "Enter new username for Omarchy" < /dev/tty)
+        if [ -z "$username" ]; then
+          echo "No username entered. Please try again."
+          continue
+        fi
+      fi
+      break
+    done
   else
-    username=$(gum input --placeholder "Enter username for Omarchy" < /dev/tty)
+    # Loop until we get valid input for new user
+    while true; do
+      username=$(gum input --placeholder "Enter username for Omarchy" < /dev/tty)
+      if [ -z "$username" ]; then
+        echo "No username entered. Please try again."
+        continue
+      fi
+      break
+    done
   fi
 
   # Create user if doesn't exist
@@ -46,6 +76,12 @@ if [[ $EUID -eq 0 ]]; then
 
     while true; do
       password=$(gum input --password --placeholder "Enter password for $username" < /dev/tty)
+
+      if [ -z "$password" ]; then
+        echo "No password supplied. Please try again."
+        continue
+      fi
+
       password_confirm=$(gum input --password --placeholder "Confirm password" < /dev/tty)
 
       if [ "$password" = "$password_confirm" ]; then
