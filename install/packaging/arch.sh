@@ -22,6 +22,18 @@ if [ -n "$OMARCHY_ARM" ]; then
   source $OMARCHY_INSTALL/arm_install_scripts/omarchy-chromium-arm64.sh
   source $OMARCHY_INSTALL/arm_install_scripts/omarchy-lazyvim.sh
 
+  # Install Limine bootloader for ARM64 but not asahi-alarm (which uses U-Boot)
+  if grep -qi "asahi" /etc/os-release 2>/dev/null ||
+    uname -r | grep -qi "asahi" ||
+    pacman -Q linux-asahi &>/dev/null ||
+    pacman -Q asahi-scripts &>/dev/null; then
+
+    echo "Skipping Limine installation on Asahi systems (uses U-Boot)"
+  else
+    source $OMARCHY_INSTALL/arm_install_scripts/limine-install-arm64.sh
+    install_limine_arm64
+  fi
+
   # Post-install tasks for ARM packages
   # Update icon cache for yaru-icon-theme (needed on ARM)
   if [ -d "/usr/share/icons/Yaru" ]; then
