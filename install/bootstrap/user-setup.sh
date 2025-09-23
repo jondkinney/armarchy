@@ -11,6 +11,7 @@ if [[ $EUID -eq 0 ]]; then
   fi
 
   if [ -n "$existing_users" ]; then
+    echo
     echo "Found existing users:"
     echo "$existing_users" | tr ' ' '\n' | sed 's/^/  - /'
 
@@ -43,7 +44,8 @@ if [[ $EUID -eq 0 ]]; then
           exit 130
         fi
 
-        if [ -z "$username" ]; then
+        # Check if username is empty or only spaces
+        if [ -z "$username" ] || [ -z "$(echo "$username" | tr -d ' ')" ]; then
           echo "No username entered. Please try again."
           continue
         fi
@@ -61,7 +63,8 @@ if [[ $EUID -eq 0 ]]; then
         exit 130
       fi
 
-      if [ -z "$username" ]; then
+      # Check if username is empty or only spaces
+      if [ -z "$username" ] || [ -z "$(echo "$username" | tr -d ' ')" ]; then
         echo "No username entered. Please try again."
         continue
       fi
@@ -71,6 +74,7 @@ if [[ $EUID -eq 0 ]]; then
 
   # Create user if doesn't exist
   if ! id "$username" &>/dev/null; then
+    echo
     echo "Creating user $username and setting password..."
     useradd -m "$username"
 
@@ -83,7 +87,8 @@ if [[ $EUID -eq 0 ]]; then
         exit 130
       fi
 
-      if [ -z "$password" ]; then
+      # Check if password is empty or only spaces
+      if [ -z "$password" ] || [ -z "$(echo "$password" | tr -d ' ')" ]; then
         echo "No password supplied. Please try again."
         continue
       fi
@@ -115,21 +120,42 @@ if [[ $EUID -eq 0 ]]; then
 
   # Collect user details for git configuration
   echo
-  user_fullname=$(gum input --placeholder "Enter your full name (for git config)" < /dev/tty)
-  exit_code=$?
 
-  if [ $exit_code -eq 130 ]; then
-    echo "Installation cancelled."
-    exit 130
-  fi
+  # Loop until we get a valid full name
+  while true; do
+    user_fullname=$(gum input --placeholder "Enter your full name (for git config)" < /dev/tty)
+    exit_code=$?
 
-  user_email=$(gum input --placeholder "Enter your email address (for git config)" < /dev/tty)
-  exit_code=$?
+    if [ $exit_code -eq 130 ]; then
+      echo "Installation cancelled."
+      exit 130
+    fi
 
-  if [ $exit_code -eq 130 ]; then
-    echo "Installation cancelled."
-    exit 130
-  fi
+    # Check if full name is empty or only spaces
+    if [ -z "$user_fullname" ] || [ -z "$(echo "$user_fullname" | tr -d ' ')" ]; then
+      echo "Full name is required. Please try again."
+      continue
+    fi
+    break
+  done
+
+  # Loop until we get a valid email
+  while true; do
+    user_email=$(gum input --placeholder "Enter your email address (for git config)" < /dev/tty)
+    exit_code=$?
+
+    if [ $exit_code -eq 130 ]; then
+      echo "Installation cancelled."
+      exit 130
+    fi
+
+    # Check if email is empty or only spaces
+    if [ -z "$user_email" ] || [ -z "$(echo "$user_email" | tr -d ' ')" ]; then
+      echo "Email address is required. Please try again."
+      continue
+    fi
+    break
+  done
 
   # Enable sudo for wheel group
   echo "Configuring sudo access..."
