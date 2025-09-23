@@ -42,13 +42,26 @@ if [[ $EUID -eq 0 ]]; then
         username=$(gum choose --header "Select user:" "${user_array[@]}" < /dev/tty)
         exit_code=$?
 
-        # Check if user cancelled or nothing was selected
+        # Check for Ctrl+C (exit code 130) and exit cleanly
+        if [ $exit_code -eq 130 ]; then
+          echo "Installation cancelled."
+          exit 130
+        fi
+
+        # Check if user cancelled with ESC or nothing was selected
         if [ $exit_code -ne 0 ] || [ -z "$username" ]; then
           echo "No user selected. Please try again."
           continue
         fi
       else
         username=$(gum input --placeholder "Enter new username for Omarchy" < /dev/tty)
+        exit_code=$?
+
+        if [ $exit_code -eq 130 ]; then
+          echo "Installation cancelled."
+          exit 130
+        fi
+
         if [ -z "$username" ]; then
           echo "No username entered. Please try again."
           continue
@@ -60,6 +73,13 @@ if [[ $EUID -eq 0 ]]; then
     # Loop until we get valid input for new user
     while true; do
       username=$(gum input --placeholder "Enter username for Omarchy" < /dev/tty)
+      exit_code=$?
+
+      if [ $exit_code -eq 130 ]; then
+        echo "Installation cancelled."
+        exit 130
+      fi
+
       if [ -z "$username" ]; then
         echo "No username entered. Please try again."
         continue
@@ -75,6 +95,12 @@ if [[ $EUID -eq 0 ]]; then
 
     while true; do
       password=$(gum input --password --placeholder "Enter password for $username" < /dev/tty)
+      exit_code=$?
+
+      if [ $exit_code -eq 130 ]; then
+        echo "Installation cancelled."
+        exit 130
+      fi
 
       if [ -z "$password" ]; then
         echo "No password supplied. Please try again."
@@ -82,6 +108,12 @@ if [[ $EUID -eq 0 ]]; then
       fi
 
       password_confirm=$(gum input --password --placeholder "Confirm password" < /dev/tty)
+      exit_code=$?
+
+      if [ $exit_code -eq 130 ]; then
+        echo "Installation cancelled."
+        exit 130
+      fi
 
       if [ "$password" = "$password_confirm" ]; then
         echo "$username:$password" | chpasswd
@@ -103,7 +135,20 @@ if [[ $EUID -eq 0 ]]; then
   # Collect user details for git configuration
   echo
   user_fullname=$(gum input --placeholder "Enter your full name (for git config)" < /dev/tty)
+  exit_code=$?
+
+  if [ $exit_code -eq 130 ]; then
+    echo "Installation cancelled."
+    exit 130
+  fi
+
   user_email=$(gum input --placeholder "Enter your email address (for git config)" < /dev/tty)
+  exit_code=$?
+
+  if [ $exit_code -eq 130 ]; then
+    echo "Installation cancelled."
+    exit 130
+  fi
 
   # Enable sudo for wheel group
   echo "Configuring sudo access..."
