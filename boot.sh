@@ -18,13 +18,24 @@ clear
 echo -e "\n$ansi_art\n"
 
 # Install git early since it's needed when running boot.sh as a non-root user
-sudo pacman -Syu --noconfirm --needed git
+if ! command -v git &>/dev/null; then
+  echo "Installing git..."
+  sudo pacman -Syu --noconfirm --needed git >/dev/null 2>&1 || {
+    echo "Error: Failed to install git"
+    exit 1
+  }
+  echo "Git installed successfully"
+fi
 
 OMARCHY_REPO="${OMARCHY_REPO:-basecamp/omarchy}" # custom repo with default fallback
 OMARCHY_REF="${OMARCHY_REF:-master}" # custom branch/ref with default fallback
 
 if [[ $EUID -eq 0 ]]; then
-  echo "Running as Root! Executing user-setup.sh to create non-root user and re-run boot.sh..."
+  echo
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "  Running as Root - Setting up non-root user for Omarchy  "
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo
 
   curl -s "https://raw.githubusercontent.com/${OMARCHY_REPO}/${OMARCHY_REF}/install/bootstrap/user-setup.sh" | \
     OMARCHY_REPO="${OMARCHY_REPO}" OMARCHY_REF="${OMARCHY_REF}" bash

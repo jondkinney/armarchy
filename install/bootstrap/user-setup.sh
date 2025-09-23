@@ -4,10 +4,12 @@ existing_users=$(awk -F: '$3 >= 1000 && $1 != "nobody" {print $1}' /etc/passwd)
 if [[ $EUID -eq 0 ]]; then
   # Install gum for user interaction (needed in bootstrap mode when helpers aren't sourced)
   if ! command -v gum &>/dev/null; then
-    pacman -S --needed --noconfirm gum || {
+    echo "Installing gum for interactive setup..."
+    pacman -S --needed --noconfirm gum >/dev/null 2>&1 || {
       echo "Error: Failed to install the 'gum' package"
       exit 1
     }
+    echo "Gum installed successfully"
   fi
 
   if [ -n "$existing_users" ]; then
@@ -20,6 +22,7 @@ if [[ $EUID -eq 0 ]]; then
 
     # Loop until we get valid input
     while true; do
+      echo
       # Force TTY allocation for gum when running from piped script
       if gum confirm "Use an existing user account?" < /dev/tty; then
         username=$(gum choose --header "Select user:" "${user_array[@]}" < /dev/tty)
@@ -36,7 +39,8 @@ if [[ $EUID -eq 0 ]]; then
           continue
         fi
       else
-        username=$(gum input --placeholder "Enter new username for Omarchy" < /dev/tty)
+        echo
+        username=$(gum input --placeholder "Enter a new username for Omarchy" < /dev/tty)
         exit_code=$?
 
         if [ $exit_code -eq 130 ]; then
@@ -55,7 +59,8 @@ if [[ $EUID -eq 0 ]]; then
   else
     # Loop until we get valid input for new user
     while true; do
-      username=$(gum input --placeholder "Enter username for Omarchy" < /dev/tty)
+      echo
+      username=$(gum input --placeholder "Enter a username for Omarchy" < /dev/tty)
       exit_code=$?
 
       if [ $exit_code -eq 130 ]; then
@@ -74,11 +79,11 @@ if [[ $EUID -eq 0 ]]; then
 
   # Create user if doesn't exist
   if ! id "$username" &>/dev/null; then
-    echo
     echo "Creating user $username and setting password..."
     useradd -m "$username"
 
     while true; do
+      echo
       password=$(gum input --password --placeholder "Enter password for $username" < /dev/tty)
       exit_code=$?
 
@@ -119,10 +124,8 @@ if [[ $EUID -eq 0 ]]; then
   fi
 
   # Collect user details for git configuration
-  echo
-
-  # Loop until we get a valid full name
-  while true; do
+  while true; do # Loop until we get a valid full name
+    echo
     user_fullname=$(gum input --placeholder "Enter your full name (for git config)" < /dev/tty)
     exit_code=$?
 
@@ -139,8 +142,10 @@ if [[ $EUID -eq 0 ]]; then
     break
   done
 
-  # Loop until we get a valid email
-  while true; do
+  echo "Saved full name: $user_fullname"
+
+  while true; do # Loop until we get a valid email
+    echo
     user_email=$(gum input --placeholder "Enter your email address (for git config)" < /dev/tty)
     exit_code=$?
 
@@ -157,18 +162,22 @@ if [[ $EUID -eq 0 ]]; then
     break
   done
 
-  # Enable sudo for wheel group
-  echo "Configuring sudo access..."
+  echo "Saved email address: $user_email"
+  echo
+  echo "Configuring sudo access..." # Enable sudo for wheel group
 
   if ! command -v sudo &>/dev/null; then
-    pacman -S --needed --noconfirm sudo && echo "Installed 'sudo' package..." || {
+    echo "Installing sudo..."
+    pacman -S --needed --noconfirm sudo >/dev/null 2>&1 || {
       echo "Error: Failed to install the 'sudo' package"
       exit 1
     }
+    echo "Sudo installed successfully"
   fi
 
   if grep -q "^# %wheel ALL=(ALL:ALL) ALL" /etc/sudoers; then
     sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
+    echo
     echo "Enabled sudo for wheel group"
   elif ! grep -q "^%wheel ALL=(ALL:ALL) ALL" /etc/sudoers; then
     echo "%wheel ALL=(ALL:ALL) ALL" >>/etc/sudoers
@@ -177,6 +186,7 @@ if [[ $EUID -eq 0 ]]; then
 
   echo
   echo "Initial user setup complete!"
+  echo
   echo "Continuing the rest of the installation as user $username..."
   echo
 
@@ -202,13 +212,21 @@ if [[ $EUID -eq 0 ]]; then
     cd /home/$username; \
     curl -fsSL https://raw.githubusercontent.com/${OMARCHY_REPO}/${OMARCHY_REF}/boot.sh | bash; \
     install_result=\$?; \
-    sudo rm -f /etc/sudoers.d/omarchy-temp 2>/dev/null && echo 'Removed temporary passwordless sudo'; \
+    sudo rm -f /etc/sudoers.d/omarchy-temp 2>/dev/null && echo && echo 'Removed temporary passwordless sudo'; \
     exit \$install_result"
 
   # Ensure runuser is available for better terminal handling
   if ! command -v runuser &>/dev/null; then
-    pacman -S --needed --noconfirm util-linux && echo "Installed util-linux for runuser..."
+    echo
+    echo "Installing runuser for better terminal handling..."
+    pacman -S --needed --noconfirm util-linux >/dev/null 2>&1 || {
+      echo "Error: Failed to install util-linux package"
+      exit 1
+    }
+    echo "Runuser installed successfully"
   fi
+
+  echo
 
   # Use runuser for better terminal handling
   echo "Starting Omarchy installation as user $username..."
