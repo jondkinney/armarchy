@@ -2,6 +2,7 @@
 # ARM-specific packages that aren't available or don't work through Yay are handled via install/arm_install_scripts/
 
 asahi-audio
+e2fsprogs
 pipewire-alsa
 pipewire-pulse
 # Note: pipewire-jack is pre-installed in preflight/arm.sh to prevent jack2 conflicts
