@@ -22,6 +22,15 @@ if [ -n "$OMARCHY_ARM" ]; then
   source $OMARCHY_INSTALL/arm_install_scripts/omarchy-chromium-arm64.sh
   source $OMARCHY_INSTALL/arm_install_scripts/omarchy-lazyvim.sh
 
+  # Widevine is what allow for playing back DRM/protected content in browsers.
+  # It's only available for ARM64 via the asahi-alarm repo. The
+  # omarchy-chromium microfork includes a widevine hook for x86_64 and ARM64,
+  # but this package is still necessary on ARM64 systems to provide the actual
+  # widevine libraries. Without it, playback of DRM content (e.g. Netflix,
+  # Disney+, Spotify, etc) will not work.
+  echo "Detected ARM64 system - Installing widevine..."
+  sudo pacman -S --needed --noconfirm asahi-alarm/widevine
+
   # Post-install tasks for ARM packages
   # Update icon cache for yaru-icon-theme (needed on ARM)
   if [ -d "/usr/share/icons/Yaru" ]; then
