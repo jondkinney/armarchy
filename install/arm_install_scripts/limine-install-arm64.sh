@@ -72,9 +72,12 @@ EOF
     sudo install -m 0644 BOOTAA64.EFI "$EFI_DIR/BOOTAA64.EFI"
 
     # Get root filesystem UUID for configuration
-    ROOT_UUID=$(blkid | grep 'TYPE="btrfs"' | grep -oP 'UUID="\K[^"]+' | head -1)
+    # Use sed instead of grep -P for better compatibility
+    ROOT_UUID=$(blkid | grep 'TYPE="btrfs"' | sed -n 's/.*UUID="\([^"]*\)".*/\1/p' | head -1)
     if [[ -z "$ROOT_UUID" ]]; then
         echo "❌ ERROR: Could not find Btrfs root UUID!"
+        echo "Debug: blkid output:"
+        blkid
         exit 1
     fi
 
@@ -127,13 +130,13 @@ EOF
         echo "✅ Found existing Limine boot entry: Boot$EXISTING_ENTRY"
     fi
 
-    # Set conservative boot order (keep GRUB as default initially)
-    echo "📋 Setting up boot order (GRUB remains default for safety)..."
+    # Set Limine as default boot option
+    echo "📋 Setting up boot order (Limine as default)..."
     LIMINE_NUM=$(sudo efibootmgr | grep "Limine" | cut -c5-8 || true)
     if [[ -n "$LIMINE_NUM" ]]; then
-        # Keep GRUB first, Limine second for safety
-        sudo efibootmgr --bootorder 0005,${LIMINE_NUM},0002,0003,0000,0004 2>/dev/null || true
-        echo "✅ Boot order configured (GRUB default, Limine available)"
+        # Set Limine first, GRUB second as fallback
+        sudo efibootmgr --bootorder ${LIMINE_NUM},0005,0002,0003,0000,0004 2>/dev/null || true
+        echo "✅ Boot order configured (Limine default, GRUB as fallback)"
     fi
 
     # Verify installation
