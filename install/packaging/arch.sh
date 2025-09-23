@@ -20,6 +20,7 @@ if [ -n "$OMARCHY_ARM" ]; then
   source $OMARCHY_INSTALL/arm_install_scripts/asdcontrol-prebuilt.sh
   source $OMARCHY_INSTALL/arm_install_scripts/obsidian-appimage.sh
   source $OMARCHY_INSTALL/arm_install_scripts/omarchy-chromium-arm64.sh
+  source $OMARCHY_INSTALL/arm_install_scripts/omarchy-lazyvim.sh
 
   # Post-install tasks for ARM packages
   # Update icon cache for yaru-icon-theme (needed on ARM)
