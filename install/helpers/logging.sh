@@ -1,3 +1,6 @@
+: "${OMARCHY_LOG_PAUSE_FILE:=/tmp/omarchy-log-output.paused}"
+export OMARCHY_LOG_PAUSE_FILE
+
 start_log_output() {
   local ANSI_SAVE_CURSOR="\033[s"
   local ANSI_RESTORE_CURSOR="\033[u"
@@ -15,6 +18,11 @@ start_log_output() {
     local max_line_width=$((LOGO_WIDTH - 4))
 
     while true; do
+      if [ -n "${OMARCHY_LOG_PAUSE_FILE:-}" ] && [ -f "$OMARCHY_LOG_PAUSE_FILE" ]; then
+        sleep 0.1
+        continue
+      fi
+
       # Read the last N lines into an array
       mapfile -t current_lines < <(tail -n $log_lines "$OMARCHY_INSTALL_LOG_FILE" 2>/dev/null)
 

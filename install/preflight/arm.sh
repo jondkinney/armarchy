@@ -1,6 +1,6 @@
-export OMARCHY_ARM=true
 echo "Auto-detected ARM architecture: $arch"
 echo "Setting OMARCHY_ARM=true"
+export OMARCHY_ARM=true
 
 # Patch envs.conf for aarch64 - add Vulkan ICD for walker
 envs_file="$HOME/.local/share/omarchy/default/hypr/envs.conf"

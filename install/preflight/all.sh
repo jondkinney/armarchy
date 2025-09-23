@@ -5,7 +5,6 @@ run_logged $OMARCHY_INSTALL/preflight/show-env.sh
 arch=$(uname -m)
 if [[ "$arch" == "aarch64" || "$arch" == "arm64" ]]; then
   run_logged $OMARCHY_INSTALL/preflight/arm.sh
-  run_logged $OMARCHY_INSTALL/preflight/asahi.sh
 fi
 
 run_logged $OMARCHY_INSTALL/preflight/pacman.sh
