@@ -1,3 +1,4 @@
+# hmm
 existing_users=$(awk -F: '$3 >= 1000 && $1 != "nobody" {print $1}' /etc/passwd)
 
 if [[ $EUID -eq 0 ]]; then
@@ -20,7 +21,6 @@ if [[ $EUID -eq 0 ]]; then
     while true; do
       # Force TTY allocation for gum when running from piped script
       if gum confirm "Use an existing user account?" < /dev/tty; then
-        # Pass user array to gum choose
         username=$(gum choose --header "Select user:" "${user_array[@]}" < /dev/tty)
         exit_code=$?
 
@@ -32,7 +32,6 @@ if [[ $EUID -eq 0 ]]; then
 
         # Check if user cancelled with ESC or nothing was selected
         if [ $exit_code -ne 0 ] || [ -z "$username" ]; then
-          echo "No user selected. Please try again."
           continue
         fi
       else
