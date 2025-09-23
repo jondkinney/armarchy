@@ -39,8 +39,7 @@ if [[ $EUID -eq 0 ]]; then
       # Force TTY allocation for gum when running from piped script
       if gum confirm "Use an existing user account?" < /dev/tty; then
         # Pass user array to gum choose
-        # Filter out "nothing selected" message while preserving the UI
-        username=$(gum choose --header "Select user:" "${user_array[@]}" < /dev/tty 2> >(grep -v "nothing selected" >&2))
+        username=$(gum choose --header "Select user:" "${user_array[@]}" < /dev/tty)
         exit_code=$?
 
         # Check if user cancelled or nothing was selected
