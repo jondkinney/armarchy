@@ -16,10 +16,6 @@ SigLevel = Required DatabaseOptional
 LocalFileSigLevel = Optional
 
 # pacman searches repositories in the order defined here
-[asahi-alarm]
-SigLevel = Never
-Include = /etc/pacman.d/mirrorlist.asahi-alarm
-
 [core]
 Include = /etc/pacman.d/mirrorlist
 
@@ -31,6 +27,10 @@ Include = /etc/pacman.d/mirrorlist
 
 [aur]
 Include = /etc/pacman.d/mirrorlist
+
+[asahi-alarm]
+SigLevel = Never
+Include = /etc/pacman.d/mirrorlist.asahi-alarm
 
 # [multilib]
 # Include = /etc/pacman.d/mirrorlist
