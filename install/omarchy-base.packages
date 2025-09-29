@@ -1,5 +1,6 @@
 # Omarchy core package list installed via install/packaging/base.sh
 # This file is also used by the ISO builder when determining needs
+# Packages that don't work on ARM are in omarchy-x86.packages
 
 1password-beta
 1password-cli
@@ -70,7 +71,6 @@ libyaml
 libqalculate
 libreoffice-fresh
 llvm
-localsend
 luarocks
 mako
 man-db
@@ -85,13 +85,7 @@ noto-fonts-emoji
 noto-fonts-extra
 nss-mdns
 nvim
-obs-studio
-obsidian
-omarchy-chromium
-omarchy-nvim
-omarchy-walker
 pamixer
-pinta
 playerctl
 plocate
 plymouth
@@ -107,9 +101,7 @@ ruby
 rust
 satty
 sddm
-signal-desktop
 slurp
-spotify
 starship
 sushi
 swaybg
@@ -142,5 +134,4 @@ xdg-terminal-exec
 xmlstarlet
 xournalpp
 yaru-icon-theme
-yay
 zoxide
