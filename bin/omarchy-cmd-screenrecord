@@ -16,20 +16,12 @@ AUDIO=$([[ $2 == "audio" ]] && echo "--audio")
 
 start_screenrecording() {
   filename="$OUTPUT_DIR/screenrecording-$(date +'%Y-%m-%d_%H-%M-%S').mp4"
-
-  # Use architecture-appropriate recorder
-  if [[ $(uname -m) == "aarch64" ]]; then
-    # ARM64: wl-screenrec not available, use wf-recorder
-    wf-recorder $AUDIO -f "$filename" -c libx264 -p crf=23 -p preset=medium -p movflags=+faststart "$@" &
+  # Use wl-screenrec on x86_64 unless NVIDIA is present (compatibility issues)
+  if [[ $(uname -m) == "x86_64" ]] && command -v wl-screenrec >/dev/null 2>&1 && ! lspci | grep -qi 'nvidia'; then
+    wl-screenrec $AUDIO -f "$filename" --ffmpeg-encoder-options="-c:v libx264 -crf 23 -preset medium -movflags +faststart" "$@" &
   else
-    # x86_64: prefer wl-screenrec for performance, fallback to wf-recorder
-    if command -v wl-screenrec >/dev/null 2>&1; then
-      wl-screenrec $AUDIO -f "$filename" --ffmpeg-encoder-options="-c:v libx264 -crf 23 -preset medium -movflags +faststart" "$@" &
-    else
-      wf-recorder $AUDIO -f "$filename" -c libx264 -p crf=23 -p preset=medium -p movflags=+faststart "$@" &
-    fi
+    wf-recorder $AUDIO -f "$filename" -c libx264 -p crf=23 -p preset=medium -p movflags=+faststart "$@" &
   fi
-
   toggle_screenrecording_indicator
 }
 
