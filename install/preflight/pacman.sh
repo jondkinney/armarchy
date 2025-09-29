@@ -3,9 +3,10 @@ if [[ -n ${OMARCHY_ONLINE_INSTALL:-} ]]; then
   sudo pacman -S --needed --noconfirm base-devel
 
   # Configure pacman
-  if [[ ${OMARCHY_MIRROR:-} == "edge" ]] ; then
+  if [[ ${OMARCHY_MIRROR:-} == "edge" && -n "$OMARCHY_ARM" ]]; then
     sudo cp -f ~/.local/share/omarchy/default/pacman/pacman-edge.conf /etc/pacman.conf
     sudo cp -f ~/.local/share/omarchy/default/pacman/mirrorlist-edge /etc/pacman.d/mirrorlist
+    sudo cp -f ~/.local/share/omarchy/default/pacman/mirrorlist.asahi-alarm /etc/pacman.d/mirrorlist.asahi-alarm
   else
     sudo cp -f ~/.local/share/omarchy/default/pacman/pacman-stable.conf /etc/pacman.conf
     sudo cp -f ~/.local/share/omarchy/default/pacman/mirrorlist-stable /etc/pacman.d/mirrorlist
