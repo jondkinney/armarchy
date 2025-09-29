@@ -15,21 +15,15 @@ SCOPE="$1"
 AUDIO=$([[ $2 == "audio" ]] && echo "--audio")
 
 start_screenrecording() {
-<<<<<<< HEAD
-  filename="$OUTPUT_DIR/screenrecording-$(date +'%Y-%m-%d_%H-%M-%S').mp4"
-  # Use wl-screenrec on x86_64 unless NVIDIA is present (compatibility issues)
-  if [[ $(uname -m) == "x86_64" ]] && command -v wl-screenrec >/dev/null 2>&1 && ! lspci | grep -qi 'nvidia'; then
-=======
   local filename="$OUTPUT_DIR/screenrecording-$(date +'%Y-%m-%d_%H-%M-%S').mp4"
 
-  if lspci | grep -qi 'nvidia'; then
-    wf-recorder $AUDIO -f "$filename" -c libx264 -p crf=23 -p preset=medium -p movflags=+faststart "$@" &
-  else
->>>>>>> upstream/amarchy-3-x
+  # Use wl-screenrec on x86_64 unless NVIDIA is present (compatibility issues)
+  if [[ $(uname -m) == "x86_64" ]] && command -v wl-screenrec >/dev/null 2>&1 && ! lspci | grep -qi 'nvidia'; then
     wl-screenrec $AUDIO -f "$filename" --ffmpeg-encoder-options="-c:v libx264 -crf 23 -preset medium -movflags +faststart" "$@" &
   else
     wf-recorder $AUDIO -f "$filename" -c libx264 -p crf=23 -p preset=medium -p movflags=+faststart "$@" &
   fi
+
   toggle_screenrecording_indicator
 }
 
