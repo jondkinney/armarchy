@@ -1,18 +1,22 @@
-#!/bin/bash
+  #!/bin/bash
 
-if [ "$(uname -r | sed 's/-arch/\.arch/')" != "$(pacman -Q linux | awk '{print $2}')" ]; then
-  gum confirm "Linux kernel has been updated. Reboot?" && omarchy-cmd-reboot
+  # Compare kernel versions (strip architecture suffix for ARM64 compatibility)
+  RUNNING_VERSION=$(uname -r | sed 's/-\(arch\|aarch64\).*$//')
+  INSTALLED_VERSION=$(pacman -Q linux 2>/dev/null | awk '{print $2}')
 
-elif [ -f "$HOME/.local/state/omarchy/reboot-required" ]; then
-  gum confirm "Updates require reboot. Ready?" && omarchy-cmd-reboot
-fi
+  if [ "$RUNNING_VERSION" != "$INSTALLED_VERSION" ]; then
+    gum confirm "Linux kernel has been updated. Reboot?" && omarchy-state clear re*-required && omarchy-cmd-reboot
 
-for file in "$HOME"/.local/state/omarchy/restart-*-required; do
-  if [ -f "$file" ]; then
-    filename=$(basename "$file")
-    service=$(echo "$filename" | sed 's/restart-\(.*\)-required/\1/')
-    echo "Restarting $service"
-    omarchy-state clear "$filename"
-    omarchy-restart-"$service"
+  elif [ -f "$HOME/.local/state/omarchy/reboot-required" ]; then
+    gum confirm "Updates require reboot. Ready?" && omarchy-cmd-reboot
   fi
-done
+
+  for file in "$HOME"/.local/state/omarchy/restart-*-required; do
+    if [ -f "$file" ]; then
+      filename=$(basename "$file")
+      service=$(echo "$filename" | sed 's/restart-\(.*\)-required/\1/')
+      echo "Restarting $service"
+      omarchy-state clear "$filename"
+      omarchy-restart-"$service"
+    fi
+  done
