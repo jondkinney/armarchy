@@ -2,28 +2,26 @@
 source "$OMARCHY_INSTALL/helpers/common.sh"
 
 if [[ -n ${OMARCHY_ONLINE_INSTALL:-} ]]; then
-  # Install build tools
-  sudo pacman -S --needed --noconfirm base-devel
-
   # Configure pacman - use ARM-specific configs on ARM systems
   if [[ ${OMARCHY_MIRROR:-} == "edge" && -n "$OMARCHY_ARM" ]]; then
     sudo cp -f ~/.local/share/omarchy/default/pacman/pacman-edge.conf /etc/pacman.conf
     sudo cp -f ~/.local/share/omarchy/default/pacman/mirrorlist-edge /etc/pacman.d/mirrorlist
     sudo cp -f ~/.local/share/omarchy/default/pacman/mirrorlist.asahi-alarm /etc/pacman.d/mirrorlist.asahi-alarm
   else
-    sudo cp -f ~/.local/share/omarchy/default/pacman/pacman-stable.conf /etc/pacman.conf
-    sudo cp -f ~/.local/share/omarchy/default/pacman/mirrorlist-stable /etc/pacman.d/mirrorlist
+    # x86 - use standard configs + keyring setup
+    sudo cp -f ~/.local/share/omarchy/default/pacman/pacman.conf /etc/pacman.conf
+    sudo cp -f ~/.local/share/omarchy/default/pacman/mirrorlist /etc/pacman.d/mirrorlist
+
+    # Add omarchy signing key
+    sudo pacman-key --recv-keys 40DFB630FF42BCFFB047046CF0134EE680CAC571 --keyserver keys.openpgp.org
+    sudo pacman-key --lsign-key 40DFB630FF42BCFFB047046CF0134EE680CAC571
+
+    # Quick sync to make omarchy-keyring available
+    sudo pacman -Sy
+
+    # Install omarchy-keyring
+    yes 1 | sudo pacman -S --noconfirm --needed omarchy-keyring
   fi
-
-  # Add omarchy signing key
-  sudo pacman-key --recv-keys 40DFB630FF42BCFFB047046CF0134EE680CAC571 --keyserver keys.openpgp.org
-  sudo pacman-key --lsign-key 40DFB630FF42BCFFB047046CF0134EE680CAC571
-
-  # Quick sync to make omarchy-keyring available
-  sudo pacman -Sy
-
-  # Install omarchy-keyring
-  yes 1 | sudo pacman -S --noconfirm --needed omarchy-keyring
 
   # Refresh all repos with retry logic
   echo "Syncing package databases..."
