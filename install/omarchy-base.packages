@@ -2,8 +2,6 @@
 # This file is also used by the ISO builder when determining needs
 # Packages that don't work on ARM are in omarchy-x86.packages
 
-1password-beta
-1password-cli
 aether
 alacritty
 asdcontrol
@@ -36,13 +34,11 @@ fd
 ffmpegthumbnailer
 fontconfig
 fzf
-ghostty
 github-cli
 gnome-calculator
 gnome-keyring
 gnome-themes-extra
 grim
-gpu-screen-recorder
 gum
 gvfs-mtp
 gvfs-nfs
@@ -69,11 +65,9 @@ less
 libsecret
 libyaml
 libqalculate
-libreoffice-fresh
 llvm
 luarocks
 mako
-man-db
 mariadb-libs
 mise
 mpv
@@ -124,7 +118,6 @@ tzupdate
 ufw
 ufw-docker
 unzip
-usage
 uwsm
 waybar
 wayfreeze
