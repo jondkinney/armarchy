@@ -544,7 +544,7 @@ show_system_menu() {
   *Screensaver*) omarchy-launch-screensaver force ;;
   *Suspend*) systemctl suspend ;;
   *Hibernate*) systemctl hibernate ;;
-  *Relaunch*) omarchy-state clear re*-required && hyprctl dispatch exit ;;
+  *Relaunch*) omarchy-cmd-relaunch ;;
   *Restart*) omarchy-cmd-reboot ;;
   *Shutdown*) omarchy-cmd-shutdown ;;
   *) back_to show_main_menu ;;
