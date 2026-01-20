@@ -42,7 +42,22 @@ done
 
 # Build and install the package
 echo "Building and installing omarchy-nvim (this may take a while)..."
-cd omarchy-pkgs/pkgbuilds/omarchy-nvim
+repo_dir="/tmp/omarchy-pkgs"
+pkg_dir=""
+
+if [ -d "$repo_dir/pkgbuilds/omarchy-nvim" ]; then
+  pkg_dir="$repo_dir/pkgbuilds/omarchy-nvim"
+else
+  # Newer repo layout nests packages under pkgbuilds/edge
+  pkg_dir=$(find "$repo_dir/pkgbuilds" -maxdepth 2 -type d -name "omarchy-nvim" -print -quit 2>/dev/null)
+fi
+
+if [ -z "$pkg_dir" ] || [ ! -d "$pkg_dir" ]; then
+  echo "Could not find omarchy-nvim PKGBUILD under $repo_dir/pkgbuilds"
+  exit 1
+fi
+
+cd "$pkg_dir"
 makepkg -si --noconfirm
 
 cd ~
