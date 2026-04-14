@@ -295,7 +295,9 @@ catch_errors() {
       echo
     fi
 
-    choice=$(gum choose --header "What would you like to do?" "${options[@]}" --height 7 --padding "1 $PADDING_LEFT")
+    # Flags must precede positional option entries; otherwise `gum choose`
+    # treats --height / --padding as menu entries.
+    choice=$(gum choose --header "What would you like to do?" --height 7 --padding "1 $PADDING_LEFT" "${options[@]}")
 
     case "$choice" in
     "Retry with disk-based /tmp (fixes 'no space left' errors)")

@@ -43,7 +43,10 @@ fi
 export LOGO_WIDTH=$(wc -L < "$LOGO_PATH" 2>/dev/null || echo 0)
 export LOGO_HEIGHT=$(wc -l < "$LOGO_PATH" 2>/dev/null || echo 0)
 export PADDING_LEFT=$(((TERM_WIDTH - LOGO_WIDTH) / 2))
-if (( LOGO_WIDTH == 0 )); then
+# Clamp to 0: LOGO_WIDTH can exceed TERM_WIDTH (narrow tty, ascii logo on
+# an 80-col serial console) which would make the value negative and break
+# printf "%*s" and gum's padding.
+if (( LOGO_WIDTH == 0 || PADDING_LEFT < 0 )); then
   PADDING_LEFT=0
 fi
 export PADDING_LEFT_SPACES=$(printf "%*s" $PADDING_LEFT "")

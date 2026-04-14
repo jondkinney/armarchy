@@ -21,9 +21,12 @@ fi
 echo "Detected VMware, installing Open VM Tools..."
 
 # Install build dependencies
+# Note: glib2 headers are provided by the 'glib2' package itself on Arch /
+# Arch ARM; there is no separate 'glib2-devel' package, and including it
+# would make pacman fail and abort VMware Tools setup.
 echo "Installing build dependencies..."
 with_yes sudo pacman -S --noconfirm --needed base-devel git autoconf automake libtool make \
-  pkgconf glib2 glib2-devel libmspack rpcsvc-proto fuse3 procps-ng xmlsec gtkmm3
+  pkgconf glib2 libmspack rpcsvc-proto fuse3 procps-ng xmlsec gtkmm3
 
 # Clone and build open-vm-tools
 BUILD_DIR="/tmp/open-vm-tools-build"
@@ -31,6 +34,8 @@ echo "Cloning open-vm-tools repository..."
 rm -rf "$BUILD_DIR"
 git clone https://github.com/vmware/open-vm-tools.git "$BUILD_DIR"
 
+# The repo is a monorepo with the daemon source in a nested
+# "open-vm-tools/" dir at the top level (alongside README/ReleaseNotes).
 cd "$BUILD_DIR/open-vm-tools"
 echo "Building open-vm-tools (this may take several minutes)..."
 if ! autoreconf -i; then
@@ -108,6 +113,10 @@ sudo systemctl enable vmtoolsd.service
 sudo systemctl start vmtoolsd.service
 
 # Create user service for clipboard support
+# Ensure /etc/systemd/user exists first — on fresh systems where no
+# user-scope unit has been placed before, the directory is missing and
+# the tee below would fail.
+sudo mkdir -p /etc/systemd/user
 echo "Creating vmware-user service for clipboard support..."
 sudo tee /etc/systemd/user/vmware-user.service <<'EOF' >/dev/null
 [Unit]

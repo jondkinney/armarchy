@@ -3,7 +3,7 @@
 #
 # TODO: update the ISO builder:
 # - Include this file with the new name
-# - Include omarchy-x68.packages
+# - Include omarchy-x86.packages
 # - Include omarchy-base-aur.packages
 
 alacritty

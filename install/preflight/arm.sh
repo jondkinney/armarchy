@@ -1,3 +1,8 @@
+# run_logged sources this script in a fresh subshell where only OMARCHY_*
+# vars are exported, so $arch from preflight/all.sh isn't visible here.
+# Compute it locally so the echo doesn't print an empty architecture.
+arch=$(uname -m)
+
 echo "Auto-detected ARM architecture: $arch"
 echo "Setting OMARCHY_ARM=true"
 export OMARCHY_ARM=true

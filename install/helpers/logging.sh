@@ -48,9 +48,7 @@ start_log_output() {
 
       printf "${ANSI_RESTORE_CURSOR}%b" "$output"
 
-      # Use bash built-in read with timeout instead of external sleep command
-      # This prevents "command not found" errors when coreutils is being upgraded
-      read -t 0.1 -N 1 2>/dev/null || true
+      sleep 0.1
     done
   ) &
   monitor_pid=$!
@@ -136,37 +134,28 @@ run_logged() {
 
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting: $script" >>"$OMARCHY_INSTALL_LOG_FILE"
 
-  # Use bash -c to create a clean subshell, preserving critical environment variables
-  bash -c "
-    # Disable error trap in subshell to prevent duplicate error display
-    # Parent shell will handle error display, subshell just logs and exits
-    trap - ERR INT TERM EXIT
+  # Export the installer env vars into the current shell so bash -c
+  # inherits them directly, rather than string-interpolating values into a
+  # single-quoted `export VAR='$VAR'` block. The interpolation approach
+  # silently breaks on any value containing a single quote (user full
+  # names like "O'Connor" being the typical real-world case). Let bash's
+  # env inheritance do the work.
+  export OMARCHY_ARM OMARCHY_ARM_BARE_METAL OMARCHY_RASPBERRY_PI ASAHI_ALARM \
+         OMARCHY_INSTALL OMARCHY_PATH OMARCHY_CHROOT_INSTALL OMARCHY_ONLINE_INSTALL \
+         OMARCHY_VIRTUALIZATION OMARCHY_VMWARE OMARCHY_SKIP_LIMINE \
+         OMARCHY_VM_SOFTWARE_RENDERING SKIP_YARU SKIP_OBS SKIP_PINTA \
+         SKIP_SIGNAL_DESKTOP_BETA OMARCHY_REPO OMARCHY_REF \
+         OMARCHY_USER_NAME OMARCHY_USER_EMAIL PATH
 
-    export OMARCHY_ARM='$OMARCHY_ARM'
-    export OMARCHY_ARM_BARE_METAL='$OMARCHY_ARM_BARE_METAL'
-    export OMARCHY_RASPBERRY_PI='$OMARCHY_RASPBERRY_PI'
-    export ASAHI_ALARM='$ASAHI_ALARM'
-    export OMARCHY_INSTALL='$OMARCHY_INSTALL'
-    export OMARCHY_PATH='$OMARCHY_PATH'
-    export OMARCHY_CHROOT_INSTALL='$OMARCHY_CHROOT_INSTALL'
-    export OMARCHY_ONLINE_INSTALL='$OMARCHY_ONLINE_INSTALL'
-    export OMARCHY_VIRTUALIZATION='$OMARCHY_VIRTUALIZATION'
-    export OMARCHY_VMWARE='$OMARCHY_VMWARE'
-    export OMARCHY_SKIP_LIMINE='$OMARCHY_SKIP_LIMINE'
-    export OMARCHY_VM_SOFTWARE_RENDERING='$OMARCHY_VM_SOFTWARE_RENDERING'
-    export SKIP_ALL='${SKIP_ALL:-}'
-    export SKIP_YARU='$SKIP_YARU'
-    export SKIP_OBS='$SKIP_OBS'
-    export SKIP_PINTA='$SKIP_PINTA'
-    export SKIP_GHOSTTY='${SKIP_GHOSTTY:-}'
-    export SKIP_SIGNAL_DESKTOP_BETA='$SKIP_SIGNAL_DESKTOP_BETA'
-    export OMARCHY_REPO='$OMARCHY_REPO'
-    export OMARCHY_REF='$OMARCHY_REF'
-    export OMARCHY_USER_NAME='$OMARCHY_USER_NAME'
-    export OMARCHY_USER_EMAIL='$OMARCHY_USER_EMAIL'
-    export PATH='$PATH'
-    source '$script'
-  " >>"$OMARCHY_INSTALL_LOG_FILE" 2>&1
+  # SKIP_ALL / SKIP_GHOSTTY may not exist in the parent env; force them to
+  # an empty string rather than leaving them unset, since some callers
+  # expect them defined.
+  export SKIP_ALL="${SKIP_ALL:-}" SKIP_GHOSTTY="${SKIP_GHOSTTY:-}"
+
+  # Disable ERR/INT/TERM/EXIT trap in subshell to prevent duplicate error
+  # display — the parent shell handles error presentation.
+  bash -c "trap - ERR INT TERM EXIT; source '$script'" \
+    >>"$OMARCHY_INSTALL_LOG_FILE" 2>&1
 
   local exit_code=$?
 
