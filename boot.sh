@@ -53,16 +53,21 @@ fi
 clear
 echo -e "\n$omarchy_art\n"
 
-# Set mirror based on branch
+# Set mirror based on branch.
+# The omarchy.org mirrors are x86_64-only. On ARM we skip setting them
+# here and let the ARM mirrorlist section below handle it — that way
+# a failed ARM mirrorlist download leaves /etc/pacman.d/mirrorlist
+# untouched (whatever the installer ISO seeded) rather than pointing
+# ARM at an x86_64 mirror that can't satisfy aarch64 requests.
 if [[ $OMARCHY_REF == "dev" ]]; then
   export OMARCHY_MIRROR=edge
-  echo 'Server = https://mirror.omarchy.org/$repo/os/$arch' | sudo tee /etc/pacman.d/mirrorlist >/dev/null
+  [[ -z "$OMARCHY_ARM" ]] && echo 'Server = https://mirror.omarchy.org/$repo/os/$arch' | sudo tee /etc/pacman.d/mirrorlist >/dev/null
 elif [[ $OMARCHY_REF == "rc" ]]; then
   export OMARCHY_MIRROR=rc
-  echo 'Server = https://rc-mirror.omarchy.org/$repo/os/$arch' | sudo tee /etc/pacman.d/mirrorlist >/dev/null
+  [[ -z "$OMARCHY_ARM" ]] && echo 'Server = https://rc-mirror.omarchy.org/$repo/os/$arch' | sudo tee /etc/pacman.d/mirrorlist >/dev/null
 else
   export OMARCHY_MIRROR=stable
-  echo 'Server = https://stable-mirror.omarchy.org/$repo/os/$arch' | sudo tee /etc/pacman.d/mirrorlist >/dev/null
+  [[ -z "$OMARCHY_ARM" ]] && echo 'Server = https://stable-mirror.omarchy.org/$repo/os/$arch' | sudo tee /etc/pacman.d/mirrorlist >/dev/null
 fi
 
 if [[ $EUID -eq 0 ]]; then
@@ -70,14 +75,30 @@ if [[ $EUID -eq 0 ]]; then
   echo "Running as Root - Setting up non-root user for Omarchy"
   echo "------------------------------------------------------"
 
-  curl -s "https://raw.githubusercontent.com/${OMARCHY_REPO}/${OMARCHY_REF}/install/bootstrap/user-setup.sh" | \
-    OMARCHY_REPO="${OMARCHY_REPO}" OMARCHY_REF="${OMARCHY_REF}" OMARCHY_ARM="${OMARCHY_ARM:-}" bash
+  # Download user-setup.sh to a temp file and verify before executing.
+  # Previously: `curl -s URL | ... bash`. If curl failed (DNS, 404,
+  # network), bash ran empty input and returned 0, so the pipeline
+  # succeeded and boot.sh exited 0 without setting up the user —
+  # causing a silent no-op install.
+  user_setup=$(mktemp)
+  if ! curl -fsSL "https://raw.githubusercontent.com/${OMARCHY_REPO}/${OMARCHY_REF}/install/bootstrap/user-setup.sh" -o "$user_setup"; then
+    echo "ERROR: Failed to download user-setup.sh from ${OMARCHY_REPO}@${OMARCHY_REF}" >&2
+    rm -f "$user_setup"
+    exit 1
+  fi
+  OMARCHY_REPO="${OMARCHY_REPO}" OMARCHY_REF="${OMARCHY_REF}" OMARCHY_ARM="${OMARCHY_ARM:-}" \
+    bash "$user_setup"
+  rm -f "$user_setup"
 
   # user-setup.sh will create user and re-run boot.sh as that user, then exit
   exit 0 # exit to not run the rest of the script, and avoid cloning as root
 fi
 
-# Update mirrorlist to avoid broken geo mirror before syncing database
+# Update mirrorlist to avoid broken geo mirror before syncing database.
+# On ARM this is the ONLY place /etc/pacman.d/mirrorlist gets configured
+# (the earlier mirror block is x86_64-only), so failure to fetch here
+# means we'd be left with whatever the installer ISO seeded — which is
+# usually fine but not something we want to silently rely on. Fail loud.
 if [[ -n "$OMARCHY_ARM" ]]; then
   echo "Configuring ARM mirrors (downloading from GitHub)..."
   if curl -fsSL "https://raw.githubusercontent.com/${OMARCHY_REPO}/${OMARCHY_REF}/default/pacman/mirrorlist.arm" -o /tmp/omarchy-mirrorlist.arm 2>/dev/null; then
@@ -85,7 +106,9 @@ if [[ -n "$OMARCHY_ARM" ]]; then
     rm -f /tmp/omarchy-mirrorlist.arm
     echo "Updated mirrorlist to use Florida mirror (avoiding broken geo mirror)"
   else
-    echo "Warning: Could not download mirrorlist, using system default"
+    echo "ERROR: Failed to download ARM mirrorlist from ${OMARCHY_REPO}@${OMARCHY_REF}" >&2
+    echo "       Cannot continue safely — aborting install." >&2
+    exit 1
   fi
 fi
 

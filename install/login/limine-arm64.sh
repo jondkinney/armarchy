@@ -126,6 +126,13 @@ echo "Creating fallback Limine configuration at ESP root..."
 sudo cp "$EFI_DIR/limine.conf" /boot/limine.conf
 
 echo "Creating EFI boot entry..."
+# Ensure efibootmgr is available — minimal ARM installs may not have it,
+# in which case every efibootmgr invocation below would fail and break
+# the bootloader setup.
+if ! command -v efibootmgr &>/dev/null; then
+  echo "Installing efibootmgr (required to manage EFI boot entries)..."
+  sudo pacman -S --needed --noconfirm efibootmgr
+fi
 DISK=$(findmnt -n -o SOURCE /boot | sed 's/p\?[0-9]\+$//')
 PART=$(findmnt -n -o SOURCE /boot | grep -o 'p\?[0-9]\+$' | sed 's/^p//')
 

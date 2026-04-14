@@ -27,14 +27,16 @@ if [[ -n ${OMARCHY_ONLINE_INSTALL:-} ]]; then
   max_attempts=3
   attempt=1
   sync_success=false
+  # Initialize up-front so the final `rm -f "$sync_log"` below is always
+  # safe, even when we take the SIMULATE branch (which doesn't otherwise
+  # assign sync_log and would leave the var unset).
+  sync_log="/tmp/pacman-sync-$$.log"
 
   # TESTING: Simulate mirror being down
   if [[ -n "${OMARCHY_SIMULATE_MIRROR_DOWN:-}" ]]; then
     echo "MIRROR DOWN SIMULATION ENABLED - Forcing database sync to fail"
     sync_success=false
   else
-    # Ensure log file is writable (may have been created by root in previous run)
-  sync_log="/tmp/pacman-sync-$$.log"
 
   while [ $attempt -le $max_attempts ]; do
       echo "Database sync attempt $attempt/$max_attempts..."
