@@ -3,7 +3,7 @@
 # Returns a formatted battery status string with percentage and power draw/charge.
 # Used by the battery notification hotkey (Ctrl + Shift + Super + B).
 
-battery_info=$(upower -i $(upower -e | grep BAT))
+battery_info=$(upower -i $(upower -e | grep '/battery_' | head -1))
 
 percentage=$(echo "$battery_info" | awk '/percentage/ {
     print int($2)
