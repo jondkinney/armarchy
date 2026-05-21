@@ -111,7 +111,6 @@ quickshell
 ripgrep
 ruby
 rust
-satty
 sddm
 signal-desktop
 slurp
@@ -122,6 +121,7 @@ sushi
 swaybg
 swayosd
 system-config-printer
+tensaku
 tesseract
 tesseract-data-eng
 tldr
