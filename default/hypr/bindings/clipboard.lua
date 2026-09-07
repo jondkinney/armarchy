@@ -32,23 +32,19 @@ local function active_window_is_terminal()
   return false
 end
 
-local function universal_clipboard_shortcut(default_mods, default_key, terminal_mods, terminal_key)
+local function universal_clipboard_shortcut(default_mods, default_key, terminal_action)
   return function()
     if active_window_is_terminal() then
-      send_shortcut_once(terminal_mods, terminal_key)()
+      terminal_action()
     else
       send_shortcut_once(default_mods, default_key)()
     end
   end
 end
 
-o.bind("SUPER + C", "Universal copy", universal_clipboard_shortcut("CTRL", "C", "CTRL", "Insert"))
-o.bind("SUPER + V", "Universal paste", function()
-  if active_window_is_terminal() then
-    hl.exec_cmd("omarchy-clipboard-paste-terminal " .. o.shell_quote(hl.get_active_window().address))
-  else
-    send_shortcut_once("CTRL", "V")()
-  end
-end)
+o.bind("SUPER + C", "Universal copy", universal_clipboard_shortcut("CTRL", "C", send_shortcut_once("CTRL", "Insert")))
+o.bind("SUPER + V", "Universal paste", universal_clipboard_shortcut("CTRL", "V", function()
+  hl.exec_cmd("omarchy-clipboard-paste-terminal " .. o.shell_quote(hl.get_active_window().address))
+end))
 o.bind("SUPER + X", "Universal cut", send_shortcut_once("CTRL", "X"))
 o.bind("SUPER + CTRL + V", "Clipboard manager", "omarchy-shell shell toggle omarchy.clipboard")
