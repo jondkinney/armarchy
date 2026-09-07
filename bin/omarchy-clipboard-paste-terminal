@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# omarchy:summary=Paste text or images into the focused terminal
+# omarchy:args=<window-address>
+# omarchy:hidden=true
+
+address=${1:-}
+[[ $address =~ ^0x[[:xdigit:]]+$ ]] || exit 1
+
+# Query Wayland outside the compositor's Lua callback: a synchronous wl-paste
+# there would wait on the compositor that is waiting for it. Inspect only the
+# offered types, never transfer image data just to choose a shortcut.
+types=$(timeout 1 wl-paste --list-types 2>/dev/null) || types=""
+mods=SHIFT
+key=Insert
+if grep -q '^image/' <<< "$types"; then
+  # Terminal paste handles text; image-aware TUIs need to receive Ctrl+V.
+  mods=CTRL
+  key=V
+fi
+
+# Don't paste into a different window if focus changed during the MIME query.
+# Keep the same explicit-modifier down/up workaround as clipboard.lua.
+hyprctl eval "
+  local window = hl.get_active_window()
+  if window and window.address == '$address' then
+    hl.dispatch(hl.dsp.send_key_state({ mods = '$mods', key = '$key', state = 'down' }))
+    hl.timer(function()
+      hl.dispatch(hl.dsp.send_key_state({ mods = '$mods', key = '$key', state = 'up' }))
+    end, { timeout = 50, type = 'oneshot' })
+  end
+" >/dev/null
